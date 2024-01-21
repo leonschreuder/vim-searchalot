@@ -31,6 +31,19 @@ function s:Test_should_perform_general_find()
   AssertEquals('1:line1' , qflist[0].text)
 endfunction
 
+function s:Test_find_should_allow_multiple_searches()
+  call writefile(["line1","line2"], g:tmpdir . '/target.txt', 'a')
+  
+  call Searcha("line1", "line2")
+
+  let qflist = getqflist()
+  AssertEquals(2 , len(qflist))
+  AssertEquals(1 , qflist[0].lnum)
+  " AssertEquals(2 , qflist[1].lnum)
+  " AssertEquals('1:line1' , qflist[0].text)
+  " AssertEquals('1:line2' , qflist[1].text)
+endfunction
+
 
 function s:Test_shoud_find_in_file()
   let tmpfile = g:tmpdir . '/target.txt'
@@ -77,26 +90,23 @@ function s:Test_shoud_find_current_word()
   AssertEquals('1:line2' , qflist[0].text)
 endfunction
 
-" function s:Test_shoud_find_selected_word()
-"   call writefile(["line1","line2","line3","line4"], g:tmpdir . '/target.txt', 'a')
-"   SetBufferContent << trim EOF
-"   line1
-"   line2
+function s:Test_shoud_find_selected_word()
+  call writefile(["line1","line2","line3","line4"], g:tmpdir . '/target.txt', 'a')
+  SetBufferContent << trim EOF
+  line1
+  line2
 
-"   line4
-"   EOF
-"   " move down 1 line
-"   :normal 3j 
-"   :normal ve
-"   let result = Get_visual_selection()
-"   echom "result:" . result
-"   " TODO: Selecting doesn't work for some reason an empty string is searched
+  line4
+  EOF
+  " move down 1 line
+  :normal 3j 
+  " select and copy (needs to make getting the selection work for some reason)
+  :normal vey
   
-"   call SearchaSelectedWord() " should be on line1
+  call SearchaSelectedWord()
 
-"   let qflist = getqflist()
-"   echom qflist
-"   AssertEquals(1 , len(qflist))
-"   AssertEquals(4 , qflist[0].lnum)
-"   AssertEquals('1:line4' , qflist[0].text)
-" endfunction
+  let qflist = getqflist()
+  AssertEquals(1 , len(qflist))
+  AssertEquals(4 , qflist[0].lnum)
+  AssertEquals('1:line4' , qflist[0].text)
+endfunction
