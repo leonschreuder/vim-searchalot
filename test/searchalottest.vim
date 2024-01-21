@@ -3,6 +3,8 @@ UTSuite The basics
 let g:orig_cwd = getcwd()
 let g:tmpdir = ""
 
+let g:searchalot_no_highlight = 1
+
 function! s:Setup()
   " in order to search in an isolated 'workspace' create some tmp stuff
   let g:tmpdir = substitute(system('mktemp -d'), '\n', '', 'g')
@@ -34,7 +36,7 @@ endfunction
 function s:Test_find_should_allow_multiple_searches()
   call writefile(["line1","line2"], g:tmpdir . '/target.txt', 'a')
   
-  call Searcha("line1", "line2")
+  call Searcha("line1 \"line2\"")
 
   let qflist = getqflist()
   AssertEquals(2 , len(qflist))
@@ -109,4 +111,13 @@ function s:Test_shoud_find_selected_word()
   AssertEquals(1 , len(qflist))
   AssertEquals(4 , qflist[0].lnum)
   AssertEquals('1:line4' , qflist[0].text)
+endfunction
+
+function s:Test_split_args()
+  AssertEquals(["a", "b", "c"], SplitArgs("a b c"))
+  AssertEquals(["a", "b", "c"], SplitArgs("a 'b' c"))
+  AssertEquals(["a", "b 2", "c"], SplitArgs("a 'b 2' c"))
+  AssertEquals(["a", "b \"2\"", "c"], SplitArgs("a 'b \"2\"' c"))
+  AssertEquals(["a", "b \'2\'", "c"], SplitArgs("a 'b \\'2\\'' c"))
+  AssertEquals(["a b", "c"], SplitArgs("a\\ b c"))
 endfunction
