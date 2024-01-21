@@ -7,22 +7,23 @@
 " endif
 " let g:loaded_searchalot = 1
 
-command! -nargs=+ Searcha call Searcha('<args>')
-command! -nargs=+ SearchaFile call SearchaFile('<args>')
 
 " Searcha
 " Searcha?
 " Like :grep, but  uses fastet available searcher and then simply searches the entire CWD
 
 " search for a specific word as a command
+command! -nargs=+ Searcha call Searcha('<args>')
 fu! Searcha(...)
   call SearchWord('*', 0, SplitArgs(a:1))
 endfu
 
+command! -nargs=+ SearchaFile call SearchaFile('<args>')
 fu! SearchaFile(filePath, ...)
   call SearchWord(a:filePath, 0, SplitArgs(a:1))
 endfu
 
+command! -nargs=+ SearchaCurrentFile call SearchaCurrentFile('<args>')
 fu! SearchaCurrentFile(...)
   call SearchWord(expand('%:.'), 0, SplitArgs(a:1))
 endfu
@@ -45,7 +46,7 @@ fu! SearchWord(location, isFullWord, searchesList)
   let orig_grepformat = &grepformat
 
   if exepath("rg") != ""
-    let &grepprg = "rg --vimgrep"
+    let &grepprg = "rg --vimgrep --pcre2"
   else
     let &grepprg='internal'
   endif
@@ -65,6 +66,7 @@ fu! SearchWord(location, isFullWord, searchesList)
   let &grepformat = orig_grepformat
 
   if ! exists("g:searchalot_no_highlight")
+    :MarkClear
     for curSearch in a:searchesList
       exec ":Mark /" . EscapeForVimRegexp(curSearch) . "/"
     endfor
@@ -175,7 +177,9 @@ function! SplitArgs(args)
       endif
 
     else
-
+      if lastChar == "\\" && char != "\\" " remove one escape, but not multiple
+        call remove(currentArgChars, -1) " first remove the escape that was added last
+      endif
       " REGULAR CHAR
       call add(currentArgChars, char)
     endif

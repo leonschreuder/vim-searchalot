@@ -120,4 +120,6 @@ function s:Test_split_args()
   AssertEquals(["a", "b \"2\"", "c"], SplitArgs("a 'b \"2\"' c"))
   AssertEquals(["a", "b \'2\'", "c"], SplitArgs("a 'b \\'2\\'' c"))
   AssertEquals(["a b", "c"], SplitArgs("a\\ b c"))
+  AssertEquals(["a", "[b]", "c"], SplitArgs("a \\[b\\] c"))
+  AssertEquals(["a", "\\", "c"], SplitArgs("a \\\\ c"))
 endfunction
