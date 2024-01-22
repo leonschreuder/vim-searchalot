@@ -1,10 +1,12 @@
-let s:parsedArgs = []
+let s:parsedArgsGroupList = []
+let s:parsedArgsGroup = []
 let s:inputArgChars = []
 let s:currentParsedWord = []
 let s:inQuote = ""
 
 fu! s:init(argString)
-  let s:parsedArgs = []
+  let s:parsedArgsGroupList = []
+  let s:parsedArgsGroup = []
   let s:inputArgChars = split(a:argString, '\zs')
   let s:currentParsedWord = []
   let s:inQuote = ""
@@ -44,6 +46,9 @@ function! utl#argparse#SplitArgs(argString)
         " not in a quote yet, so this is an opening quote
         call s:openQuote(currentChar)
       endif
+
+    elseif currentChar == "|"
+      call s:endGroup()
     else
 
       " REGULAR CHAR
@@ -54,7 +59,12 @@ function! utl#argparse#SplitArgs(argString)
   endwhile
 
   call s:endWord() " End last group
-  return s:parsedArgs
+  if len(s:parsedArgsGroupList) == 0
+    return s:parsedArgsGroup
+  else
+    call s:endGroup()
+    return s:parsedArgsGroupList
+  endif
 endfunction
 
 fu! s:isQuote(char)
@@ -66,7 +76,9 @@ fu! s:addCharToWord(char)
 endfu
 
 fu! s:endWord()
-  call add(s:parsedArgs, s:currentParsedWord->join(""))
+  if len(s:currentParsedWord) >= 1
+    call add(s:parsedArgsGroup, s:currentParsedWord->join(""))
+  endif
   let s:currentParsedWord = []
 endfu
 
@@ -85,3 +97,10 @@ endfu
 fu! s:openQuote(char)
   let s:inQuote = a:char
 endfu
+
+fu! s:endGroup()
+  call s:endWord()
+  call add(s:parsedArgsGroupList, s:parsedArgsGroup)
+  let s:parsedArgsGroup = []
+endfu
+

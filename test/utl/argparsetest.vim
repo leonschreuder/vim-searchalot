@@ -11,3 +11,7 @@ function s:Test_split_args()
   AssertEquals(["a", "\\", "c"], utl#argparse#SplitArgs("a \\\\ c"))
 endfunction
 
+
+function s:Test_multiple_commands()
+  AssertEquals([["a"], ["c"]], utl#argparse#SplitArgs("'a' | 'c'"))
+endfunction
