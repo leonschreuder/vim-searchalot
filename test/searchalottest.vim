@@ -112,14 +112,3 @@ function s:Test_shoud_find_selected_word()
   AssertEquals(4 , qflist[0].lnum)
   AssertEquals('1:line4' , qflist[0].text)
 endfunction
-
-function s:Test_split_args()
-  AssertEquals(["a", "b", "c"], SplitArgs("a b c"))
-  AssertEquals(["a", "b", "c"], SplitArgs("a 'b' c"))
-  AssertEquals(["a", "b 2", "c"], SplitArgs("a 'b 2' c"))
-  AssertEquals(["a", "b \"2\"", "c"], SplitArgs("a 'b \"2\"' c"))
-  AssertEquals(["a", "b \'2\'", "c"], SplitArgs("a 'b \\'2\\'' c"))
-  AssertEquals(["a b", "c"], SplitArgs("a\\ b c"))
-  AssertEquals(["a", "[b]", "c"], SplitArgs("a \\[b\\] c"))
-  AssertEquals(["a", "\\", "c"], SplitArgs("a \\\\ c"))
-endfunction

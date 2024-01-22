@@ -15,17 +15,17 @@
 " search for a specific word as a command
 command! -nargs=+ Searcha call Searcha('<args>')
 fu! Searcha(...)
-  call SearchWord('*', 0, SplitArgs(a:1))
+  call SearchWord('*', 0, utl#argparse#SplitArgs(a:1))
 endfu
 
 command! -nargs=+ SearchaFile call SearchaFile('<args>')
 fu! SearchaFile(filePath, ...)
-  call SearchWord(a:filePath, 0, SplitArgs(a:1))
+  call SearchWord(a:filePath, 0, utl#argparse#SplitArgs(a:1))
 endfu
 
 command! -nargs=+ SearchaCurrentFile call SearchaCurrentFile('<args>')
 fu! SearchaCurrentFile(...)
-  call SearchWord(expand('%:.'), 0, SplitArgs(a:1))
+  call SearchWord(expand('%:.'), 0, utl#argparse#SplitArgs(a:1))
 endfu
 
 fu! SearchaCurrentWord()
@@ -134,59 +134,6 @@ function! s:get_visual_selection()
   let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
   let lines[0] = lines[0][column_start - 1:]
   return join(lines, "\n")
-endfunction
-
-" Because we want simple quoting like in bash, which means everything
-" is a string separated by spaces, unless the string is quoted.
-function! SplitArgs(args)
-  let args = []
-  let inputCharList = split(a:args, '\zs')
-  let lastChar = ''
-  let inQuote = ""
-  let currentArgChars = []
-  for char in inputCharList
-    if char == " "
-
-      " SPACE
-      if lastChar == "\\"
-        call remove(currentArgChars, -1) " first remove the escape that was added last
-        " now treat the space as part of the space separated string and add it
-        call add(currentArgChars, char)
-      elseif inQuote != ""
-        call add(currentArgChars, char)
-      else
-        call add(args, currentArgChars->join(""))
-        let currentArgChars = []
-      endif
-
-    elseif char == '"' || char == "'"
-
-      " QUOTES
-      if lastChar == "\\" " this is an escaped character, so just add and continue
-        call remove(currentArgChars, -1) " first remove the escape that was added last
-        call add(currentArgChars, char) " now add the char like a regular one
-      elseif inQuote != ""
-        if inQuote == char " this is the closing char
-          let inQuote = ""
-        else " not the one we have opened, treat as simple character to parse
-          call add(currentArgChars, char)
-        endif
-      else
-        " not in a quote yet, so this is an opening quote
-        let inQuote = char
-      endif
-
-    else
-      if lastChar == "\\" && char != "\\" " remove one escape, but not multiple
-        call remove(currentArgChars, -1) " first remove the escape that was added last
-      endif
-      " REGULAR CHAR
-      call add(currentArgChars, char)
-    endif
-    let lastChar = char
-  endfor
-  call add(args, currentArgChars->join("")) " End last group
-  return args
 endfunction
 
 " }}}
