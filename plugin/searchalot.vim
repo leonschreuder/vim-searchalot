@@ -29,15 +29,12 @@ fu! SearchaCurrentFile(...)
 endfu
 
 fu! SearchaCurrentWord()
-  call SearchWord("*", 1, [EscapeForGNURegexp(expand("<cword>"))])
+  call SearchWord("*", 1, [[EscapeForGNURegexp(expand("<cword>"))]])
 endfu
 
 fu! SearchaSelectedWord()
-  call SearchWord("*", 0, [EscapeForGNURegexp(s:get_visual_selection())])
+  call SearchWord("*", 0, [[EscapeForGNURegexp(s:get_visual_selection())]])
 endfu
-
-" fu! searcha#regex(location, searchesList)
-" endfu
 
 fu! SearchWord(location, isFullWord, searchesList)
   " so we don't ediit the grepprg in case someone was using it, the current
@@ -51,10 +48,12 @@ fu! SearchWord(location, isFullWord, searchesList)
     let &grepprg='internal'
   endif
 
-  let searches = searchalot#performOptionalEscaping(a:searchesList)
+  " let searches = searchalot#performOptionalEscaping(a:searchesList)
+  let searches = a:searchesList
   if a:isFullWord == 1
     let searches = searchalot#addWordBoundries(searches)
   endif
+  echom "searches: " . string(searches)
 
   let grepCmd = searchalot#buildGrepCommand(searches, a:location)
 
@@ -76,17 +75,27 @@ endfu
 fu! searchalot#buildGrepCommand(searchesList, location)
   let grepCmd = ['grep!']
 
+  let nested = len(a:searchesList) > 1
+
   if &grepprg == 'internal'
-    for curSearch in a:searchesList
+    for curSearch in a:searchesList[0]
       call add(grepCmd, "/" . curSearch . "/j")
     endfor
   else
-    for curSearch in a:searchesList
-      call add(grepCmd, "-e '" . curSearch . "'")
+    for curSearchList in a:searchesList
+      if len(grepCmd) > 1 " only true if we encounter a second list
+        call add(grepCmd, a:location)
+        call add(grepCmd, "\\| rg")
+      endif
+      for curSearch in curSearchList
+        call add(grepCmd, "-e '" . curSearch . "'")
+      endfor
     endfor
   endif
+  if ! nested
+    call add(grepCmd, a:location)
+  endif
 
-  call add(grepCmd, a:location)
   return join(grepCmd, ' ')
 endfu
 
@@ -103,15 +112,19 @@ fu! searchalot#performOptionalEscaping(searchesList)
 endfu
 
 fu! searchalot#addWordBoundries(searchesList)
-  let processedSearches = []
-  for curSearch in a:searchesList
-    if &grepprg == 'internal'
-      call add(processedSearches, "\\<" . curSearch . "\\>")
-    else
-      call add(processedSearches, "\\b" . curSearch . "\\b")
-    endif
+  let processedSearchesList = []
+  for curSearchList in a:searchesList
+    let currentProcessedSearches = []
+    for curSearch in curSearchList
+      if &grepprg == 'internal'
+        call add(currentProcessedSearches, "\\<" . curSearch . "\\>")
+      else
+        call add(currentProcessedSearches, "\\b" . curSearch . "\\b")
+      endif
+    endfor
+    call add(processedSearchesList, currentProcessedSearches)
   endfor
-  return processedSearches
+  return processedSearchesList
 endfu
 
 " credit: https://stackoverflow.com/a/61517520/3968618

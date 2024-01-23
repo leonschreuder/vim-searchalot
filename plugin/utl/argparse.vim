@@ -58,13 +58,8 @@ function! utl#argparse#SplitArgs(argString)
     let index = index + 1
   endwhile
 
-  call s:endWord() " End last group
-  if len(s:parsedArgsGroupList) == 0
-    return s:parsedArgsGroup
-  else
-    call s:endGroup()
-    return s:parsedArgsGroupList
-  endif
+  call s:endGroup()
+  return s:parsedArgsGroupList
 endfunction
 
 fu! s:isQuote(char)

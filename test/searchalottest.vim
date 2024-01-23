@@ -41,9 +41,6 @@ function s:Test_find_should_allow_multiple_searches()
   let qflist = getqflist()
   AssertEquals(2 , len(qflist))
   AssertEquals(1 , qflist[0].lnum)
-  " AssertEquals(2 , qflist[1].lnum)
-  " AssertEquals('1:line1' , qflist[0].text)
-  " AssertEquals('1:line2' , qflist[1].text)
 endfunction
 
 
@@ -111,4 +108,16 @@ function s:Test_shoud_find_selected_word()
   AssertEquals(1 , len(qflist))
   AssertEquals(4 , qflist[0].lnum)
   AssertEquals('1:line4' , qflist[0].text)
+endfunction
+
+function s:Test_find_should_allow_stacked_searches_which_research_on_matches()
+  call writefile(["line1","line2", "thing2"], g:tmpdir . '/target.txt', 'a')
+  
+  call Searcha("line | 2")
+
+  let qflist = getqflist()
+  AssertEquals(1 , len(qflist))
+  :Comment string(qflist)
+  AssertEquals(2 , qflist[0].lnum)
+  AssertEquals('1:line2' , qflist[0].text)
 endfunction
