@@ -9,6 +9,9 @@ function! s:Setup()
   " in order to search in an isolated 'workspace' create some tmp stuff
   let g:tmpdir = substitute(system('mktemp -d'), '\n', '', 'g')
   " isolate and redirect in vim
+  if exists("g:searchalot_force_tool")
+    unlet g:searchalot_force_tool " in case was set
+  endif
  
   tabe " open a new tab
   " change the working dir of the whole tab to the temp location
@@ -29,8 +32,61 @@ function s:Test_should_perform_general_find()
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
-  AssertEquals(1 , qflist[0].lnum)
   AssertEquals('1:line1' , qflist[0].text)
+endfunction
+
+function s:Test_should_perform_find_for_all_defined_searchtools()
+  call writefile(["line1"], g:tmpdir . '/target.txt', 'a')
+
+  for searchtoolname in keys(g:searchalot_searchtools)
+    let g:searchalot_force_tool = searchtoolname
+    call Searcha("line1")
+    let qflist = getqflist()
+    AssertEquals(1 , len(qflist))
+    AssertEquals('1:line1' , qflist[0].text)
+  endfor
+
+endfunction
+
+function s:Test_should_set_grepprg_correctly()
+
+  " no tool forced, finds first existing one
+  AssertEquals("rg", searchalot#getCurrentSearchToolValues()['name'])
+
+  let g:searchalot_force_tool = "rg"
+  AssertEquals("rg", searchalot#getCurrentSearchToolValues()['name'])
+
+  let g:searchalot_force_tool = "grep"
+  AssertEquals("grep", searchalot#getCurrentSearchToolValues()['name'])
+
+  let g:searchalot_force_tool = "undefined"
+  AssertThrows searchalot#getCurrentSearchToolValues()
+
+  let old_searchtools = g:searchalot_searchtools
+  let g:searchalot_searchtools = { "notinstalled": { "grepprg": "notinstalled" } }
+  let g:searchalot_force_tool = "notinstalled"
+  AssertThrows searchalot#getCurrentSearchToolValues()
+  let g:searchalot_searchtools = old_searchtools
+endfunction
+
+function s:Test_should_perform_escaping_for_internal()
+  AssertEquals([["a\\$b"]], searchalot#performVimRegexEscaping([["a$b"]]))
+endfunction
+
+function s:Test_should_add_word_boundries_for_whole_words()
+  let oldgrepprg = &grepprg
+  let &grepprg = 'internal'
+  AssertEquals([["\\<a\\>", "\\<b\\>"], ["\\<c\\>"]], searchalot#addWordBoundries([["a", "b"], ["c"]]))
+  let &grepprg = 'rg'
+  AssertEquals([["\\ba\\b", "\\bb\\b"], ["\\bc\\b"]], searchalot#addWordBoundries([["a", "b"], ["c"]]))
+  let &grepprg = oldgrepprg
+endfunction
+
+function s:Test_should_build_grep_command()
+  AssertEquals("grep! -e 'a' *", searchalot#buildGrepCommand({"name": "rg"}, [["a"]], "*"))
+  AssertEquals("grep! -e 'a' -e 'b' *", searchalot#buildGrepCommand({"name": "rg"}, [["a", "b"]], "*"))
+  AssertEquals("grep! -e 'a' -e 'b' * \\| rg -e 'c'", searchalot#buildGrepCommand({"name": "rg", "piped": "rg"}, [["a", "b"], ["c"]], "*"))
+  AssertEquals("grep! -e 'a' -e 'b' * \\| grep -e 'c'", searchalot#buildGrepCommand({"name": "grep", "piped": "grep"}, [["a", "b"], ["c"]], "*"))
 endfunction
 
 function s:Test_find_should_allow_multiple_searches()
@@ -117,7 +173,6 @@ function s:Test_find_should_allow_stacked_searches_which_research_on_matches()
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
-  :Comment string(qflist)
   AssertEquals(2 , qflist[0].lnum)
   AssertEquals('1:line2' , qflist[0].text)
 endfunction

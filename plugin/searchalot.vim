@@ -7,90 +7,122 @@
 " endif
 " let g:loaded_searchalot = 1
 
+let g:searchalot_searchtools = {
+\  'rg': { 'grepprg': 'rg --vimgrep ', 'piped': 'rg' },
+\  'grep': { 'grepprg': 'grep -n ', 'grepprgunix': 'grep -n $* /dev/null', 'piped': 'grep' },
+\}
 
-" Searcha
-" Searcha?
-" Like :grep, but  uses fastet available searcher and then simply searches the entire CWD
+" let g:searchalot_force_tool = ""
 
 " search for a specific word as a command
 command! -nargs=+ Searcha call Searcha('<args>')
 fu! Searcha(...)
-  call SearchWord('*', 0, utl#argparse#SplitArgs(a:1))
+  call searchalot#runSearch('*', 0, utl#argparse#SplitArgs(a:1))
 endfu
 
 command! -nargs=+ SearchaFile call SearchaFile('<args>')
 fu! SearchaFile(filePath, ...)
-  call SearchWord(a:filePath, 0, utl#argparse#SplitArgs(a:1))
+  call searchalot#runSearch(a:filePath, 0, utl#argparse#SplitArgs(a:1))
 endfu
 
 command! -nargs=+ SearchaCurrentFile call SearchaCurrentFile('<args>')
 fu! SearchaCurrentFile(...)
-  call SearchWord(expand('%:.'), 0, utl#argparse#SplitArgs(a:1))
+  call searchalot#runSearch(expand('%:.'), 0, utl#argparse#SplitArgs(a:1))
 endfu
 
 fu! SearchaCurrentWord()
-  call SearchWord("*", 1, [[EscapeForGNURegexp(expand("<cword>"))]])
+  call searchalot#runSearch("*", 1, [[EscapeForGNURegexp(expand("<cword>"))]])
 endfu
 
 fu! SearchaSelectedWord()
-  call SearchWord("*", 0, [[EscapeForGNURegexp(s:get_visual_selection())]])
+  call searchalot#runSearch("*", 0, [[EscapeForGNURegexp(s:get_visual_selection())]])
 endfu
 
-fu! SearchWord(location, isFullWord, searchesList)
-  " so we don't ediit the grepprg in case someone was using it, the current
-  " values are saved and restored
+
+fu! searchalot#runSearch(location, isFullWord, searchesList)
+  " We use grepprg, but I don't want to change the grepprg permanently in case
+  " the user was using it outside of the plugin. The current values are
+  " therfore saved and restored wenn we're done.
   let oldgrepprg = &grepprg
-  let orig_grepformat = &grepformat
 
-  if exepath("rg") != ""
-    let &grepprg = "rg --vimgrep --pcre2"
-  else
-    let &grepprg='internal'
-  endif
+  let searchTool = searchalot#getCurrentSearchToolValues()
 
-  " let searches = searchalot#performOptionalEscaping(a:searchesList)
+  let &grepprg = searchTool['grepprg']
+
   let searches = a:searchesList
+  if searchTool['name'] == 'internal'
+    let searches = searchalot#performVimRegexEscaping(a:searchesList)
+  endif
   if a:isFullWord == 1
     let searches = searchalot#addWordBoundries(searches)
   endif
-  echom "searches: " . string(searches)
 
-  let grepCmd = searchalot#buildGrepCommand(searches, a:location)
+  let grepCmd = searchalot#buildGrepCommand(searchTool, searches, a:location)
 
-  echomsg "searching:'" . grepCmd . "' using '" . &grepprg . "'"
+  " echomsg "searching:'" . grepCmd . "' using '" . &grepprg . "'"
   execute 'silent ' . grepCmd
   copen " open the results in the quickfix window
 
   let &grepprg = oldgrepprg
-  let &grepformat = orig_grepformat
 
   if ! exists("g:searchalot_no_highlight")
     :MarkClear
-    for curSearch in a:searchesList
-      exec ":Mark /" . EscapeForVimRegexp(curSearch) . "/"
+    for curSearchList in a:searchesList
+      for curSearch in curSearchList
+        exec ":Mark /" . EscapeForVimRegexp(curSearch) . "/"
+      endfor
     endfor
   endif
 endfu
 
-fu! searchalot#buildGrepCommand(searchesList, location)
+fu! searchalot#getCurrentSearchToolValues()
+  if exists("g:searchalot_force_tool")
+    if ! has_key(g:searchalot_searchtools, g:searchalot_force_tool)
+      throw "tool '" . g:searchalot_force_tool . "' is not defined in the available tools:" . string(g:searchalot_searchtools)
+    elseif exepath(g:searchalot_force_tool) == ""
+      throw "tool '" . g:searchalot_force_tool . "' is not found as an executable. Check your path or tool definition."
+    else
+      let toolconfig = get(g:searchalot_searchtools, g:searchalot_force_tool)
+      let toolconfig['name'] = g:searchalot_force_tool
+      return toolconfig
+    endif
+  else
+    for tool in keys(g:searchalot_searchtools)
+      if exepath(tool) != ""
+        let toolconfig = get(g:searchalot_searchtools, tool)
+        let toolconfig['name'] = tool
+        return toolconfig
+      endif
+    endfor
+  endif
+  return {"name": "internal", "grepprg": "internal" } " in case none where found installed on the system
+endfu
+
+fu! searchalot#buildGrepCommand(searchTool, searchesList, location)
   let grepCmd = ['grep!']
 
   let nested = len(a:searchesList) > 1
 
-  if &grepprg == 'internal'
+  if a:searchTool['name'] == 'internal'
     for curSearch in a:searchesList[0]
       call add(grepCmd, "/" . curSearch . "/j")
     endfor
   else
-    for curSearchList in a:searchesList
-      if len(grepCmd) > 1 " only true if we encounter a second list
+    let index = 0
+    while index < len(a:searchesList)
+      let curSearchList = a:searchesList[index]
+
+      if index >= 1 " only true if we encounter a second list
         call add(grepCmd, a:location)
-        call add(grepCmd, "\\| rg")
+        call add(grepCmd, "\\| " . a:searchTool['piped'])
       endif
+
       for curSearch in curSearchList
         call add(grepCmd, "-e '" . curSearch . "'")
       endfor
-    endfor
+
+      let index = index + 1
+    endwhile
   endif
   if ! nested
     call add(grepCmd, a:location)
@@ -99,16 +131,16 @@ fu! searchalot#buildGrepCommand(searchesList, location)
   return join(grepCmd, ' ')
 endfu
 
-fu! searchalot#performOptionalEscaping(searchesList)
-  let processedSearches = []
-  if &grepprg == 'internal'
-    for curSearch in a:searchesList
-      call add(processedSearches, EscapeForVimRegexp(curSearch))
+fu! searchalot#performVimRegexEscaping(searchesList)
+  let processedSearchesList = []
+  for curSearchList in a:searchesList
+    let currentProcessedSearches = []
+    for curSearch in curSearchList
+      call add(currentProcessedSearches, EscapeForVimRegexp(curSearch))
     endfor
-  else
-    let processedSearches = a:searchesList
-  endif
-  return processedSearches
+    call add(processedSearchesList, currentProcessedSearches)
+  endfor
+  return processedSearchesList
 endfu
 
 fu! searchalot#addWordBoundries(searchesList)
