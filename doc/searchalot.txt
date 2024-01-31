@@ -1,0 +1,194 @@
+*searchalot.txt* The night in the shiny armor to help you find things fast.
+
+Author:  Leon Schreuder <https://github.com/leonschreuder>
+License: MIT
+
+1. Introduction             |searchalot-description|
+2. Getting started          |searchalot-getting-started|
+3. How-Tos                  |searchalot-howtos|   
+4. API Reference            |searchalot-api|   
+5. Discussions              |searchalot-discussions|   
+
+==============================================================================
+DESCRIPTION                                             *searchalot-description*
+
+Searchalot tries to get the fastest searcher available on your machine, and
+use that to find things and put them into the quickfix window. After that it
+will also highlight the searches for you.
+
+It is built to help searching large log files and analyse them quickly. See
+also my vim-chunk plugin (link below) to read only parts of large log files
+for fast and eficient log searching.
+
+https://github.com/leonschreuder/vim-chunk
+
+GETTING STARTED                                     *searchalot-getting-started*
+
+1. Install the plugin using your favorite plugin manager.
+2. Now perform a search. Like this for example:
+  - change (cd) into a sourcecode directory you want to search and open vim
+  - Enter the command `:Sal "my-search"`
+  - Open the quickfix window (for example calling the command `:copen`)
+  - You now see all the matches to your search, highlighting each match
+  - Press `<enter>` to open the file with the match. The match is also
+    highlighted in the file.
+3. Setup mappings
+  This plugin does not automatically set any mappings as that might mess up
+  your current mappings. But here are some I suggest using. Copy them to your
+  vimrc and change the mappings to fit your needs if you want.
+>
+    " quickly search the word under the cursor using vim-searchalot
+    nnoremap <leader>/ :call SearchalotCurrentWord()<CR>
+    " quickly search the selected word using vim-searchalot
+    vnoremap <leader>/ :call SearchalotSelection()<CR>
+<
+
+HOW-TOS                                                      *searchalot-howtos*
+
+How do I search for a word, how are spaces handled?~
+
+Spaces are handled like the linux shell: Every word separated by a space is
+one element and one search. Escaping the\ space, or putting words "in quotes"
+('single' or "double") treats them as a combined string.
+>
+  :Sal search1 search2
+  :Sal search\ 3 "search 4" 'search 5'
+<
+
+Can I use regexes?~
+
+Yes. Searches are simply handed to the search tool, so as long as you use
+standard regex stuff, you'll be fine with any tool. If you want to do
+non-standard stuff (like lookahead, lookbehind, etc), you might need to look
+in the documentation of the tool you are using. Notice that the highlighting
+uses vim-internal regexes, which might behave differently.
+>
+  :Sal "[eE]llo\sthere!"
+<
+
+How can I string multiple searches together?~
+
+If you want to search for a stirng and then search again in those matches, you
+would do something like this in the shell: `grep 'prefix' | grep thing`
+Seachalot supports this by using the pipe '|' character. For example:
+>
+  :Sal "prefix" | "some sub-match"
+<
+
+API REFERENCE                                    *searchalot-api*
+
+Commands:~
+
+                                                 *searchalot-:Sal*
+                                                 *searchalot-:Searchalot*
+:Searchalot {searches}
+:Sal {searches}              Run a search through all files in the current
+                             working directory. This works similar to running
+                             `grep {searches} *` but with the fastest searcher
+                             available on your system. Multiple
+                             string-separated searches can be added, and each
+                             will be searched and highlighted. If a pipe is
+                             added, it will first search for everything before
+                             the pipe, and run the search again on the matches
+                             of the first. This is similar to grepping, and
+                             then piping the result in another grep to refine
+                             your search. For example:
+                             `:Sal "prefix" | "specific thing"` This will
+                             first search for the prefix, and then run a
+                             search for "specific thing" on all matches of the
+                             first search.
+
+
+                                                 *searchalot-:Salf*
+                                                 *searchalot-:SearchalotInFile*
+:SearchalotInFile {file} {search}
+:Salf {file} {search}        Like |:Sal| but searches only the specified
+                             file.
+
+                                                 *searchalot-:SearchalotCurrentFile*
+:SearchalotCurrentFile {search}
+:Salc {search}               Like |:Sal| but only search this file.
+
+
+Functions:~
+
+                                               *searchalot-SearchalotCurrentWord()*
+SearchalotCurrentWord()         Function you can use in a mapping to search for
+                             the word under the cursor. It works like
+                             |:Sal| and searches all files in the working
+                             dir and any subdirectory. See |getting-started|
+                             for an example of such a mapping.
+
+                                              *searchalot-SearchalotSelection()*
+SearchalotSelection()        Function you can use in a mapping to search for
+                             the selection. It works like |:Sal| and
+                             searches all files in the working dir and any
+                             subdirectory. See |getting-started| for an
+                             example of such a mapping.
+
+
+Variables:~
+
+                                           *searchalot-g:searchalot_searchtools*
+g:searchalot_searchtools     |Dictionary| of search tools and their precedence
+                             to use. See the example below or for all default
+                             options, see the top of the plugin/searchalot.vim
+                             file. You can configure your own searchtools by
+                             setting the property in your vimrc.
+>
+    let g:searchalot_searchtools = {
+    \  'rg': { 'grepprg': 'rg --vimgrep ', 'piped': 'rg' },
+    \}
+<
+                                            *searchalot-g:searchalot_force_tool*
+g:searchalot_force_tool      If you prefer to use a certain tool over another
+                             one, but the other one is higher in the list, you
+                             can either change the |g:searchalot_searchtools|
+                             variable or set this variable to the string name
+                             of the tool to specify the one you want to use.
+
+                                          *searchalot-g:searchalot_no_highlight*
+g:searchalot_no_highlight    When set (to any value) this variable it does not
+                             highlight the matches of the searches.
+
+DISCUSSIONS                                             *searchalot-discussions*
+
+Why I wrote this plugin and think it is usefull~
+
+I wrote this plugin together with the vim-chunk plugin, to allow me to analyse
+large logs quickly and efficiently using vim. Vim is great for a lot of text
+based stuff, but if you want to search huge log files and make sense of the
+output, vim is less then ideal out of the box. This plugin allows me to search
+huge logs files using a fast grep alternative, using a minimal set of
+memorable commands, directly from vim and view the results. This plugin allows
+you to pipe multiple searches together which really helps in a lot of log
+analysis scenarios. The highlighting is a big part of it, so multiple searches
+are easy to distinguish and analyse. Without having to manually transfer the
+searches from the search command to the highlighting command.
+
+Alternatives~
+
+I didn't really search around for other tools and just started building my own
+(like a dumbass). The thing that this plugin is mostly lacking right now, is
+the lack of customisation of the searches. But that doesn't fit my usecase and
+would be added bloat, so I probably won't add that. The strenghts of this
+plugin however are the built-in highlighing and combining multiple piped
+searches together. Check these other plugins out to see if they might fit your
+needs better:
+
+ack.vim                 https://github.com/mileszs/ack.vim              
+Uses Ack per default but can be configured to use ripgrep for example. It is
+very similar to this plugin without the highlighting or chained searches.
+
+fzf.vim                 https://github.com/junegunn/fzf.vim
+Allows you to search using several tools, using fuzzy searching, and opens a
+pretty popup window that is easy to navigate. This is awasome if you want to
+find stuff in code, less so if you want to analyse logs for events etc.
+
+vim-esearch             https://github.com/eugen0329/vim-esearch
+More search and replace based I think.
+
+If you know any more alternatives I'd be happy to add them here.
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
