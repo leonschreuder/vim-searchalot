@@ -28,8 +28,8 @@ endfunction
 
 function s:Test_should_perform_general_find()
   call writefile(["line1"], g:tmpdir . '/target.txt', 'a')
-  
-  call Searcha("line1")
+
+  call SearchalotWorkingDir("line1")
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
@@ -41,7 +41,7 @@ function s:Test_should_perform_find_for_all_defined_searchtools()
 
   for searchtoolname in keys(g:searchalot_searchtools)
     let g:searchalot_force_tool = searchtoolname
-    call Searcha("line1")
+    call SearchalotWorkingDir("line1")
     let qflist = getqflist()
     AssertEquals(1 , len(qflist))
     AssertEquals('1:line1' , qflist[0].text)
@@ -93,7 +93,7 @@ endfunction
 function s:Test_find_should_allow_multiple_searches()
   call writefile(["line1","line2"], g:tmpdir . '/target.txt', 'a')
   
-  call Searcha("line1 \"line2\"")
+  call SearchalotWorkingDir("line1 \"line2\"")
 
   let qflist = getqflist()
   AssertEquals(2 , len(qflist))
@@ -105,7 +105,7 @@ function s:Test_shoud_find_in_file()
   let tmpfile = g:tmpdir . '/target.txt'
   call writefile(["line1"], tmpfile, 'a')
   
-  call SearchaFile(tmpfile, "line1")
+  call SearchalotInFile(tmpfile, "line1")
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
@@ -119,7 +119,7 @@ function s:Test_shoud_find_in_current_file()
   call writefile(["line1"], tmpfile, 'a')
   exec ':e ' . tmpfile
   
-  call SearchaCurrentFile("line1")
+  call SearchalotCurrentFile("line1")
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
@@ -138,7 +138,7 @@ function s:Test_shoud_find_current_word()
   " move down 1 line
   :normal j 
   
-  call SearchaCurrentWord() " should be on line1
+  call SearchalotCurrentWord() " should be on line1
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
@@ -159,7 +159,7 @@ function s:Test_shoud_find_selected_word()
   " select and copy (needs to make getting the selection work for some reason)
   :normal vey
   
-  call SearchaSelectedWord()
+  call SearchalotSelection()
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
@@ -170,7 +170,7 @@ endfunction
 function s:Test_find_should_allow_stacked_searches_which_research_on_matches()
   call writefile(["line1","line2", "thing2"], g:tmpdir . '/target.txt', 'a')
   
-  call Searcha("line | 2")
+  call SearchalotWorkingDir("line | 2")
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))

@@ -14,26 +14,30 @@ let g:searchalot_searchtools = {
 \}
 
 " search for a specific word as a command
-command! -nargs=+ Searcha call Searcha('<args>')
-fu! Searcha(...)
+command! -nargs=+ Sal call SearchalotWorkingDir('<args>')
+command! -nargs=+ Searchalot call SearchalotWorkingDir('<args>')
+
+fu! SearchalotWorkingDir(...)
   call searchalot#runSearch('*', 0, utl#argparse#SplitArgs(a:1))
 endfu
 
-command! -nargs=+ SearchaFile call SearchaFile('<args>')
-fu! SearchaFile(filePath, ...)
+command! -nargs=+ Salf call SearchalotInFile('<args>')
+command! -nargs=+ SearchalotInFile call SearchalotInFile('<args>')
+fu! SearchalotInFile(filePath, ...)
   call searchalot#runSearch(a:filePath, 0, utl#argparse#SplitArgs(a:1))
 endfu
 
-command! -nargs=+ SearchaCurrentFile call SearchaCurrentFile('<args>')
-fu! SearchaCurrentFile(...)
+command! -nargs=+ Salc call SearchalotCurrentFile('<args>')
+command! -nargs=+ SearchalotCurrentFile call SearchalotCurrentFile('<args>')
+fu! SearchalotCurrentFile(...)
   call searchalot#runSearch(expand('%:.'), 0, utl#argparse#SplitArgs(a:1))
 endfu
 
-fu! SearchaCurrentWord()
+fu! SearchalotCurrentWord()
   call searchalot#runSearch("*", 1, [[EscapeForGNURegexp(expand("<cword>"))]])
 endfu
 
-fu! SearchaSelectedWord()
+fu! SearchalotSelection()
   call searchalot#runSearch("*", 0, [[EscapeForGNURegexp(s:get_visual_selection())]])
 endfu
 
