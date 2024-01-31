@@ -1,18 +1,17 @@
-" vim-searchalot - Searchin in files, and highlighting the result
+" vim-searchalot - Search in files, and highlighting the matches
+"
 " Maintainer:    Leon Schreuder
 " Version:       0.1
 
-" if exists("g:loaded_searchalot") && !exists('g:force_reload_ftplug_vim_UT')
-"   finish
-" endif
-" let g:loaded_searchalot = 1
+if exists("g:loaded_searchalot") && !exists('g:searchalot_force_reload')
+  finish
+endif
+let g:loaded_searchalot = 1
 
 let g:searchalot_searchtools = {
 \  'rg': { 'grepprg': 'rg --vimgrep ', 'piped': 'rg' },
 \  'grep': { 'grepprg': 'grep -n ', 'grepprgunix': 'grep -n $* /dev/null', 'piped': 'grep' },
 \}
-
-" let g:searchalot_force_tool = ""
 
 " search for a specific word as a command
 command! -nargs=+ Searcha call Searcha('<args>')
@@ -59,7 +58,6 @@ fu! searchalot#runSearch(location, isFullWord, searchesList)
 
   let grepCmd = searchalot#buildGrepCommand(searchTool, searches, a:location)
 
-  " echomsg "searching:'" . grepCmd . "' using '" . &grepprg . "'"
   execute 'silent ' . grepCmd
   copen " open the results in the quickfix window
 
@@ -75,6 +73,10 @@ fu! searchalot#runSearch(location, isFullWord, searchesList)
   endif
 endfu
 
+" resolve the values of the first match of the search tools configured.
+" Repecting g:searchalot_force_tool, or get the first one that is installed
+" from the list, while checking if the tool is installed. Fallback to
+" 'internal' if no tool could be found.
 fu! searchalot#getCurrentSearchToolValues()
   if exists("g:searchalot_force_tool")
     if ! has_key(g:searchalot_searchtools, g:searchalot_force_tool)
@@ -98,6 +100,38 @@ fu! searchalot#getCurrentSearchToolValues()
   return {"name": "internal", "grepprg": "internal" } " in case none where found installed on the system
 endfu
 
+" Escape each string in the nested list for vims regex syntax
+fu! searchalot#performVimRegexEscaping(searchesList)
+  let processedSearchesList = []
+  for curSearchList in a:searchesList
+    let currentProcessedSearches = []
+    for curSearch in curSearchList
+      call add(currentProcessedSearches, EscapeForVimRegexp(curSearch))
+    endfor
+    call add(processedSearchesList, currentProcessedSearches)
+  endfor
+  return processedSearchesList
+endfu
+
+" Add the appropriate word boundry to each word for the active search tool
+fu! searchalot#addWordBoundries(searchesList)
+  let processedSearchesList = []
+  for curSearchList in a:searchesList
+    let currentProcessedSearches = []
+    for curSearch in curSearchList
+      if &grepprg == 'internal'
+        call add(currentProcessedSearches, "\\<" . curSearch . "\\>")
+      else
+        call add(currentProcessedSearches, "\\b" . curSearch . "\\b")
+      endif
+    endfor
+    call add(processedSearchesList, currentProcessedSearches)
+  endfor
+  return processedSearchesList
+endfu
+
+" The grepprg is set before, and this then builds a :grep 'search' command
+" as a string, fitting the provided searchesList
 fu! searchalot#buildGrepCommand(searchTool, searchesList, location)
   let grepCmd = ['grep!']
 
@@ -129,34 +163,6 @@ fu! searchalot#buildGrepCommand(searchTool, searchesList, location)
   endif
 
   return join(grepCmd, ' ')
-endfu
-
-fu! searchalot#performVimRegexEscaping(searchesList)
-  let processedSearchesList = []
-  for curSearchList in a:searchesList
-    let currentProcessedSearches = []
-    for curSearch in curSearchList
-      call add(currentProcessedSearches, EscapeForVimRegexp(curSearch))
-    endfor
-    call add(processedSearchesList, currentProcessedSearches)
-  endfor
-  return processedSearchesList
-endfu
-
-fu! searchalot#addWordBoundries(searchesList)
-  let processedSearchesList = []
-  for curSearchList in a:searchesList
-    let currentProcessedSearches = []
-    for curSearch in curSearchList
-      if &grepprg == 'internal'
-        call add(currentProcessedSearches, "\\<" . curSearch . "\\>")
-      else
-        call add(currentProcessedSearches, "\\b" . curSearch . "\\b")
-      endif
-    endfor
-    call add(processedSearchesList, currentProcessedSearches)
-  endfor
-  return processedSearchesList
 endfu
 
 " credit: https://stackoverflow.com/a/61517520/3968618

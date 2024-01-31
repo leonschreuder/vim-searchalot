@@ -4,6 +4,7 @@ let g:orig_cwd = getcwd()
 let g:tmpdir = ""
 
 let g:searchalot_no_highlight = 1
+let g:searchalot_force_reload = 1
 
 function! s:Setup()
   " in order to search in an isolated 'workspace' create some tmp stuff
