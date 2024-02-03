@@ -9,7 +9,7 @@ endif
 let g:loaded_searchalot = 1
 
 let g:searchalot_searchtools = {
-\  'rg': { 'grepprg': 'rg --vimgrep ', 'piped': 'rg' },
+\  'rg': { 'grepprg': 'rg --vimgrep --sort path', 'piped': 'rg' },
 \  'grep': { 'grepprg': 'grep -n ', 'grepprgunix': 'grep -n $* /dev/null', 'piped': 'grep' },
 \}
 
