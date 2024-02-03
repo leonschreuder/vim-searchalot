@@ -6,6 +6,19 @@ let g:tmpdir = ""
 let g:searchalot_no_highlight = 1
 let g:searchalot_force_reload = 1
 
+" TODO:
+" - add descriptive error messages (missing file, no search string etc)
+" - in addition to quickfix list, also provide linkedlist commands (multiple
+"   searches in one instance)
+" - other plugins besides :Mark?
+
+" SETUP
+" ================================================================================
+
+function! s:BeforeAll()
+  source plugin/searchalot.vim
+endfunction
+
 function! s:Setup()
   " in order to search in an isolated 'workspace' create some tmp stuff
   let g:tmpdir = substitute(system('mktemp -d'), '\n', '', 'g')
@@ -26,14 +39,28 @@ function! s:Teardown()
 endfunction
 
 
+" TESTS
+" ================================================================================
+
 function s:Test_should_perform_general_find()
+  " given
   call writefile(["line1"], g:tmpdir . '/target.txt', 'a')
 
-  call SearchalotWorkingDir("line1")
+  " when
+  :Searchalot "line1"
 
+  " then
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
   AssertEquals('1:line1' , qflist[0].text)
+
+  " when
+  :Lsearchalot "line1"
+
+  " then
+  let llist = getloclist(win_getid())
+  AssertEquals(1 , len(llist))
+  AssertEquals('1:line1' , llist[0].text)
 endfunction
 
 function s:Test_should_perform_find_for_all_defined_searchtools()
@@ -41,7 +68,9 @@ function s:Test_should_perform_find_for_all_defined_searchtools()
 
   for searchtoolname in keys(g:searchalot_searchtools)
     let g:searchalot_force_tool = searchtoolname
-    call SearchalotWorkingDir("line1")
+
+    :Searchalot "line1"
+
     let qflist = getqflist()
     AssertEquals(1 , len(qflist))
     AssertEquals('1:line1' , qflist[0].text)
@@ -85,6 +114,7 @@ endfunction
 
 function s:Test_should_build_grep_command()
   AssertEquals("grep! -e 'a' *", searchalot#buildGrepCommand({"name": "rg"}, [["a"]], "*"))
+  AssertEquals("lgrep! -e 'a' *", searchalot#buildGrepCommand({"name": "rg"}, [["a"]], "*", { "locationlist" : 1 }))
   AssertEquals("grep! -e 'a' -e 'b' *", searchalot#buildGrepCommand({"name": "rg"}, [["a", "b"]], "*"))
   AssertEquals("grep! -e 'a' -e 'b' * \\| rg -e 'c'", searchalot#buildGrepCommand({"name": "rg", "piped": "rg"}, [["a", "b"], ["c"]], "*"))
   AssertEquals("grep! -e 'a' -e 'b' * \\| grep -e 'c'", searchalot#buildGrepCommand({"name": "grep", "piped": "grep"}, [["a", "b"], ["c"]], "*"))
@@ -93,7 +123,7 @@ endfunction
 function s:Test_find_should_allow_multiple_searches()
   call writefile(["line1","line2"], g:tmpdir . '/target.txt', 'a')
   
-  call SearchalotWorkingDir("line1 \"line2\"")
+  :Searchalot line1 "line2"
 
   let qflist = getqflist()
   AssertEquals(2 , len(qflist))
@@ -105,7 +135,7 @@ function s:Test_shoud_find_in_file()
   let tmpfile = g:tmpdir . '/target.txt'
   call writefile(["line1"], tmpfile, 'a')
   
-  call SearchalotInFile(tmpfile, "line1")
+  exec ":SearchalotInFile" . tmpfile . " line1 \"line2\""
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
@@ -119,7 +149,7 @@ function s:Test_shoud_find_in_current_file()
   call writefile(["line1"], tmpfile, 'a')
   exec ':e ' . tmpfile
   
-  call SearchalotCurrentFile("line1")
+  :SearchalotCurrentFile "line1"
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))

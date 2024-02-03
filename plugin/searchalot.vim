@@ -13,36 +13,109 @@ let g:searchalot_searchtools = {
 \  'grep': { 'grepprg': 'grep -n ', 'grepprgunix': 'grep -n $* /dev/null', 'piped': 'grep' },
 \}
 
-" search for a specific word as a command
-command! -nargs=+ Sal call SearchalotWorkingDir('<args>')
-command! -nargs=+ Searchalot call SearchalotWorkingDir('<args>')
 
-fu! SearchalotWorkingDir(...)
-  call searchalot#runSearch('*', 0, utl#argparse#SplitArgs(a:1))
+
+" COMMANDS
+" ================================================================================
+
+""" search for a specific word in the working dir. Open in the quickfix window
+command! -nargs=+ Sal call searchalot#InWorkingDirToQuickfix('<args>')
+command! -nargs=+ Searchalot call searchalot#InWorkingDirToQuickfix('<args>')
+fu! searchalot#InWorkingDirToQuickfix(inputString)
+  call searchalot#runSearch('*', {}, utl#argparse#SplitArgs(a:inputString))
 endfu
 
-command! -nargs=+ Salf call SearchalotInFile('<args>')
-command! -nargs=+ SearchalotInFile call SearchalotInFile('<args>')
-fu! SearchalotInFile(filePath, ...)
-  call searchalot#runSearch(a:filePath, 0, utl#argparse#SplitArgs(a:1))
+""" search for a specific word in the working dir. Open in the location-list window
+command! -nargs=+ Lsal call searchalot#InWorkingDirToLinkedList('<args>')
+command! -nargs=+ Lsearchalot call searchalot#InWorkingDirToLinkedList('<args>')
+
+""" Search for a specific word in the specified file. Open in the quickfix window
+command! -nargs=+ -complete=file Salf call searchalot#InFileToQuickfix('<args>')
+command! -nargs=+ -complete=file SearchalotInFile call searchalot#InFileToQuickfix('<args>')
+
+""" Search for a specific word in the specified file. Open in the location-list window
+command! -nargs=+ -complete=file Lsalf call searchalot#InFileToLinkedList('<args>')
+command! -nargs=+ -complete=file LsearchalotInFile call searchalot#InFileToLinkedList('<args>')
+
+""" Search for a specific word in the current file. Open in the quickfix window
+command! -nargs=+ Salc call searchalot#InCurrentFileToQuickfix('<args>')
+command! -nargs=+ SearchalotCurrentFile call searchalot#InCurrentFileToQuickfix('<args>')
+
+""" Search for a specific word in the current file. Open in the location-list window
+command! -nargs=+ Lsalc call searchalot#InCurrentFileToLocationList('<args>')
+command! -nargs=+ LsearchalotCurrentFile call searchalot#InCurrentFileToLocationList('<args>')
+
+
+" MAPPING FUNCTIONS
+" ================================================================================
+
+""" Search for a specific word under the cursor. Open in the quickfix window
+fu! SearchalotCurrentWordToQuickfix()
+  call searchalot#runSearch("*", { "full_word": 1 }, s:current_word_as_search())
 endfu
 
-command! -nargs=+ Salc call SearchalotCurrentFile('<args>')
-command! -nargs=+ SearchalotCurrentFile call SearchalotCurrentFile('<args>')
-fu! SearchalotCurrentFile(...)
-  call searchalot#runSearch(expand('%:.'), 0, utl#argparse#SplitArgs(a:1))
+""" Search for a specific word under the cursor. Open in the location-list window
+fu! SearchalotCurrentWordToLocation()
+  call searchalot#runSearch("*", { "full_word": 1, "locationlist" : 1 }, s:current_word_as_search())
 endfu
 
-fu! SearchalotCurrentWord()
-  call searchalot#runSearch("*", 1, [[EscapeForGNURegexp(expand("<cword>"))]])
+""" Search for selection. Open in the quickfix window
+fu! SearchalotSelectionToQuickfix()
+  call searchalot#runSearch("*", {}, s:current_selection_as_search())
 endfu
 
-fu! SearchalotSelection()
-  call searchalot#runSearch("*", 0, [[EscapeForGNURegexp(s:get_visual_selection())]])
+""" Search for selection. Open in the location-list window
+fu! SearchalotSelectionToLocation()
+  call searchalot#runSearch("*", {"locationlist" : 1}, s:current_selection_as_search())
 endfu
 
 
-fu! searchalot#runSearch(location, isFullWord, searchesList)
+fu! s:current_word_as_search()
+  return [[EscapeForGNURegexp(expand("<cword>"))]]
+endfu
+
+fu! s:current_selection_as_search()
+  return [[EscapeForGNURegexp(s:get_visual_selection())]]
+endfu
+
+
+" COMMAND RUNNERS
+" ================================================================================
+
+fu! searchalot#InWorkingDirToLinkedList(inputString)
+  call searchalot#runSearch('*', { "locationlist" : 1 }, utl#argparse#SplitArgs(a:inputString))
+endfu
+
+fu! searchalot#InFileToQuickfix(inputString)
+  let parsed = utl#argparse#SplitArgs(a:inputString)
+  " first item as file, then remove the file from the args
+  let file = parsed[0][0]
+  unlet parsed[0][0]
+  call searchalot#runSearch(file, {}, parsed)
+endfu
+
+fu! searchalot#InFileToLinkedList(inputString)
+  let parsed = utl#argparse#SplitArgs(a:inputString)
+  " first item as file, then remove the file from the args
+  let file = parsed[0][0]
+  unlet parsed[0][0]
+  call searchalot#runSearch(file, { "locationlist" : 1 }, parsed)
+endfu
+
+fu! searchalot#InCurrentFileToQuickfix(inputString)
+  call searchalot#runSearch(expand('%:.'), {}, utl#argparse#SplitArgs(a:inputString))
+endfu
+
+fu! searchalot#InCurrentFileToLocationList(inputString)
+  call searchalot#runSearch(expand('%:.'), { "locationlist" : 1 }, utl#argparse#SplitArgs(a:inputString))
+endfu
+
+
+" ACTUAL SEARCHING
+" ================================================================================
+
+
+fu! searchalot#runSearch(location, config, searchesList)
   " We use grepprg, but I don't want to change the grepprg permanently in case
   " the user was using it outside of the plugin. The current values are
   " therfore saved and restored wenn we're done.
@@ -56,11 +129,11 @@ fu! searchalot#runSearch(location, isFullWord, searchesList)
   if searchTool['name'] == 'internal'
     let searches = searchalot#performVimRegexEscaping(a:searchesList)
   endif
-  if a:isFullWord == 1
+  if has_key(a:config, "full_word") && a:config["full_word"] == 1
     let searches = searchalot#addWordBoundries(searches)
   endif
 
-  let grepCmd = searchalot#buildGrepCommand(searchTool, searches, a:location)
+  let grepCmd = searchalot#buildGrepCommand(searchTool, searches, a:location, a:config)
 
   execute 'silent ' . grepCmd
   copen " open the results in the quickfix window
@@ -71,7 +144,8 @@ fu! searchalot#runSearch(location, isFullWord, searchesList)
     :MarkClear
     for curSearchList in a:searchesList
       for curSearch in curSearchList
-        exec ":Mark /" . EscapeForVimRegexp(curSearch) . "/"
+        " use 'very magic' so we can mostly use grep-is regexes here
+        exec ":Mark /\\v" . curSearch . "/"
       endfor
     endfor
   endif
@@ -136,8 +210,13 @@ endfu
 
 " The grepprg is set before, and this then builds a :grep 'search' command
 " as a string, fitting the provided searchesList
-fu! searchalot#buildGrepCommand(searchTool, searchesList, location)
-  let grepCmd = ['grep!']
+fu! searchalot#buildGrepCommand(searchTool, searchesList, location, config = {})
+  let grepCmd = []
+  if has_key(a:config, 'locationlist') && a:config['locationlist'] == 1
+    call add(grepCmd, 'lgrep!')
+  else
+    call add(grepCmd, 'grep!')
+  endif
 
   let nested = len(a:searchesList) > 1
 
