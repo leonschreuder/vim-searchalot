@@ -18,30 +18,57 @@ let g:searchalot_searchtools = {
 " COMMANDS
 " ================================================================================
 
-""" search for a specific word in the working dir. Open in the quickfix window
+""" :Searchalot {searches}
+""" :Sal {searches}
+""" 
+""" Run a search through all files in the current working directory. This
+""" works similar to running `grep {searches} *` but with the fastest searcher
+""" available on your system. Multiple string-separated searches can be added,
+""" and each will be searched and highlighted. If a pipe is added, it will
+""" first search for everything before the pipe, and run the search again on
+""" the matches of the first. This is similar to grepping, and then piping the
+""" result in another grep to refine your search. For example:  
+""" `:Sal "prefix" | "specific thing"`  
+""" This will first search for the prefix, and then run a search for "specific
+""" thing" on all matches of the first search. Results are opend in the
+""" quickfix window.
 command! -nargs=+ Sal call searchalot#InWorkingDirToQuickfix('<args>')
 command! -nargs=+ Searchalot call searchalot#InWorkingDirToQuickfix('<args>')
-fu! searchalot#InWorkingDirToQuickfix(inputString)
-  call searchalot#runSearch('*', {}, utl#argparse#SplitArgs(a:inputString))
-endfu
 
-""" search for a specific word in the working dir. Open in the location-list window
+""" :Lsearchalot {searches}
+""" :Lsal {searches}
+""" 
+""" Same as |:Sal| but open the result in the location list.
 command! -nargs=+ Lsal call searchalot#InWorkingDirToLinkedList('<args>')
 command! -nargs=+ Lsearchalot call searchalot#InWorkingDirToLinkedList('<args>')
 
-""" Search for a specific word in the specified file. Open in the quickfix window
+""" :SearchalotInFile {file} {searches}
+""" :Salf {file} {searches}
+""" 
+""" Like |:Sal| but searches only the specified file. Results are opend in the
+""" quickfix window.
 command! -nargs=+ -complete=file Salf call searchalot#InFileToQuickfix('<args>')
 command! -nargs=+ -complete=file SearchalotInFile call searchalot#InFileToQuickfix('<args>')
 
-""" Search for a specific word in the specified file. Open in the location-list window
+""" :LsearchalotInFile {file} {searches}
+""" :Lsalf {file} {searches}
+""" 
+""" Same as |:Salf| but open the result in the location list.
 command! -nargs=+ -complete=file Lsalf call searchalot#InFileToLinkedList('<args>')
 command! -nargs=+ -complete=file LsearchalotInFile call searchalot#InFileToLinkedList('<args>')
 
-""" Search for a specific word in the current file. Open in the quickfix window
+""" :SearchalotCurrentFile {searches}
+""" :Salc {searches}
+""" 
+""" Like |:Sal| but searches only the current file. Results are opend in the
+""" quickfix window.
 command! -nargs=+ Salc call searchalot#InCurrentFileToQuickfix('<args>')
 command! -nargs=+ SearchalotCurrentFile call searchalot#InCurrentFileToQuickfix('<args>')
 
-""" Search for a specific word in the current file. Open in the location-list window
+""" :LsearchalotCurrentFile {file} {searches}
+""" :Lsalc {file} {searches}
+""" 
+""" Same as |:Salc| but open the result in the location list.
 command! -nargs=+ Lsalc call searchalot#InCurrentFileToLocationList('<args>')
 command! -nargs=+ LsearchalotCurrentFile call searchalot#InCurrentFileToLocationList('<args>')
 
@@ -49,22 +76,22 @@ command! -nargs=+ LsearchalotCurrentFile call searchalot#InCurrentFileToLocation
 " MAPPING FUNCTIONS
 " ================================================================================
 
-""" Search for a specific word under the cursor. Open in the quickfix window
+" Search for a specific word under the cursor. Open in the quickfix window
 fu! SearchalotCurrentWordToQuickfix()
   call searchalot#runSearch("*", { "full_word": 1 }, s:current_word_as_search())
 endfu
 
-""" Search for a specific word under the cursor. Open in the location-list window
+" Search for a specific word under the cursor. Open in the location-list window
 fu! SearchalotCurrentWordToLocation()
   call searchalot#runSearch("*", { "full_word": 1, "locationlist" : 1 }, s:current_word_as_search())
 endfu
 
-""" Search for selection. Open in the quickfix window
+" Search for selection. Open in the quickfix window
 fu! SearchalotSelectionToQuickfix()
   call searchalot#runSearch("*", {}, s:current_selection_as_search())
 endfu
 
-""" Search for selection. Open in the location-list window
+" Search for selection. Open in the location-list window
 fu! SearchalotSelectionToLocation()
   call searchalot#runSearch("*", {"locationlist" : 1}, s:current_selection_as_search())
 endfu
@@ -81,6 +108,10 @@ endfu
 
 " COMMAND RUNNERS
 " ================================================================================
+
+fu! searchalot#InWorkingDirToQuickfix(inputString)
+  call searchalot#runSearch('*', {}, utl#argparse#SplitArgs(a:inputString))
+endfu
 
 fu! searchalot#InWorkingDirToLinkedList(inputString)
   call searchalot#runSearch('*', { "locationlist" : 1 }, utl#argparse#SplitArgs(a:inputString))
