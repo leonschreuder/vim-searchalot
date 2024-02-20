@@ -160,14 +160,18 @@ fu! searchalot#runSearch(location, config, searchesList)
   if searchTool['name'] == 'internal'
     let searches = searchalot#performVimRegexEscaping(a:searchesList)
   endif
-  if has_key(a:config, "full_word") && a:config["full_word"] == 1
+  if s:configIsFullWord(a:config)
     let searches = searchalot#addWordBoundries(searches)
   endif
 
   let grepCmd = searchalot#buildGrepCommand(searchTool, searches, a:location, a:config)
 
   execute 'silent ' . grepCmd
-  copen " open the results in the quickfix window
+  if s:configIsLocationList(a:config)
+    lopen  " open the results in the locationlist window
+  else
+    copen " open the results in the quickfix window
+  endif
 
   let &grepprg = oldgrepprg
 
@@ -243,7 +247,7 @@ endfu
 " as a string, fitting the provided searchesList
 fu! searchalot#buildGrepCommand(searchTool, searchesList, location, config = {})
   let grepCmd = []
-  if has_key(a:config, 'locationlist') && a:config['locationlist'] == 1
+  if s:configIsLocationList(a:config)
     call add(grepCmd, 'lgrep!')
   else
     call add(grepCmd, 'grep!')
@@ -252,6 +256,9 @@ fu! searchalot#buildGrepCommand(searchTool, searchesList, location, config = {})
   let nested = len(a:searchesList) > 1
 
   if a:searchTool['name'] == 'internal'
+    if nested
+      throw "Nested searches are not supported for internal vimgrep"
+    endif
     for curSearch in a:searchesList[0]
       call add(grepCmd, "/" . curSearch . "/j")
     endfor
@@ -279,6 +286,9 @@ fu! searchalot#buildGrepCommand(searchTool, searchesList, location, config = {})
   return join(grepCmd, ' ')
 endfu
 
+" Helper functions
+" ------------------------------------------------------------
+
 " credit: https://stackoverflow.com/a/61517520/3968618
 function! EscapeForVimRegexp(str)
   return escape(a:str, '^$.*?/\[]')
@@ -286,6 +296,14 @@ endfunction
 function! EscapeForGNURegexp(str)
   return escape(a:str, '^$.*?/\[]()' . '"' . "'")
 endfunction
+
+fu! s:configIsLocationList(config)
+  return has_key(a:config, 'locationlist') && a:config['locationlist'] == 1
+endfu
+
+fu! s:configIsFullWord(config)
+  return has_key(a:config, "full_word") && a:config["full_word"] == 1
+endfu
 
 " credit: https://stackoverflow.com/a/6271254/3968618
 function! s:get_visual_selection()

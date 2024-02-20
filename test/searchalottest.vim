@@ -8,8 +8,6 @@ let g:searchalot_force_reload = 1
 
 " TODO:
 " - add descriptive error messages (missing file, no search string etc)
-" - in addition to quickfix list, also provide linkedlist commands (multiple
-"   searches in one instance)
 " - other plugins besides :Mark?
 
 " SETUP
@@ -26,7 +24,7 @@ function! s:Setup()
   if exists("g:searchalot_force_tool")
     unlet g:searchalot_force_tool " in case was set
   endif
- 
+
   tabe " open a new tab
   " change the working dir of the whole tab to the temp location
   exec "tcd " . g:tmpdir
@@ -122,7 +120,7 @@ endfunction
 
 function s:Test_find_should_allow_multiple_searches()
   call writefile(["line1","line2"], g:tmpdir . '/target.txt', 'a')
-  
+
   :Searchalot line1 "line2"
 
   let qflist = getqflist()
@@ -130,11 +128,22 @@ function s:Test_find_should_allow_multiple_searches()
   AssertEquals(1 , qflist[0].lnum)
 endfunction
 
+function s:Test_find_should_allow_stacked_searches_which_research_on_matches()
+  call writefile(["line1","line2", "thing2"], g:tmpdir . '/target.txt', 'a')
+
+  :Searchalot line | 2
+
+  let qflist = getqflist()
+  AssertEquals(1 , len(qflist))
+  AssertEquals(2 , qflist[0].lnum)
+  AssertEquals('1:line2' , qflist[0].text)
+endfunction
+
 
 function s:Test_shoud_find_in_file()
   let tmpfile = g:tmpdir . '/target.txt'
   call writefile(["line1"], tmpfile, 'a')
-  
+
   exec ":SearchalotInFile" . tmpfile . " line1 \"line2\""
 
   let qflist = getqflist()
@@ -148,7 +157,7 @@ function s:Test_shoud_find_in_current_file()
   let tmpfile = g:tmpdir . '/target.txt'
   call writefile(["line1"], tmpfile, 'a')
   exec ':e ' . tmpfile
-  
+
   :SearchalotCurrentFile "line1"
 
   let qflist = getqflist()
@@ -166,9 +175,9 @@ function s:Test_shoud_find_current_word()
   line4
   EOF
   " move down 1 line
-  :normal j 
-  
-  call SearchalotCurrentWord() " should be on line1
+  :normal j
+
+  call SearchalotCurrentWordToQuickfix() " should be on line1
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
@@ -185,25 +194,14 @@ function s:Test_shoud_find_selected_word()
   line4
   EOF
   " move down 1 line
-  :normal 3j 
+  :normal 3j
   " select and copy (needs to make getting the selection work for some reason)
   :normal vey
-  
-  call SearchalotSelection()
+
+  call SearchalotSelectionToQuickfix()
 
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
   AssertEquals(4 , qflist[0].lnum)
   AssertEquals('1:line4' , qflist[0].text)
-endfunction
-
-function s:Test_find_should_allow_stacked_searches_which_research_on_matches()
-  call writefile(["line1","line2", "thing2"], g:tmpdir . '/target.txt', 'a')
-  
-  call SearchalotWorkingDir("line | 2")
-
-  let qflist = getqflist()
-  AssertEquals(1 , len(qflist))
-  AssertEquals(2 , qflist[0].lnum)
-  AssertEquals('1:line2' , qflist[0].text)
 endfunction
