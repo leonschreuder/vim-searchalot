@@ -1,4 +1,46 @@
 
+function DocItem()
+  return {
+    commands = {},
+    text = {""},
+
+    addCommand = function(self, commandText)
+      table.insert(self.commands, commandText)
+    end,
+
+    addText = function(self, text)
+      if self.text[#self.text] == "" then
+        self.text[#self.text] = text
+      else
+        self.text[#self.text] = self.text[#self.text] .. " " .. text
+      end
+    end,
+
+    addTextLineBreak = function(self)
+      table.insert(self.text, "")
+    end,
+
+    notEmpty = function(self)
+      return #self.text >= 1 and self.text[#self.text] ~= ""
+    end,
+
+    toString = function(self)
+      print("{")
+      print("  commands: {")
+      for i = 1, #self.commands do
+        print("    "..self.commands[i])
+      end
+      print("  }")
+      print("  text: {")
+      for i = 1, #self.text do
+        print("    '"..self.text[i].."'")
+      end
+      print("  }")
+      print("}")
+    end
+  }
+end
+
 -- TODO: 
 --  - Respect empty lines?
 --  - Repect line breaks by ending vimdoc in 2 spaces
@@ -6,7 +48,7 @@
 
 function ParseFile(filePath)
   local blocks = {}
-  local currentBlock = { commands = {}, text = "" }
+  local docItem = DocItem()
 
   local file = io.open(filePath, "r")
   if not file then print(string.format("file %s not found?", filePath)) end
@@ -15,25 +57,26 @@ function ParseFile(filePath)
     if line:find("^\"\"\"") ~= nil then
       local docText = string.sub(line, 5)
       if docText:find("^:") ~= nil then
-        table.insert(currentBlock["commands"], docText)
-      elseif currentBlock['text'] == "" then
-        currentBlock["text"] = docText
+        docItem:addCommand(docText)
+      elseif docText:find("%s%s$") then
+        print(docText)
+        docItem:addText(docText:sub(1, -3))
+        docItem:addTextLineBreak()
       else
-        currentBlock["text"] = currentBlock["text"] .. " " .. docText
+        docItem:addText(docText)
       end
     else
-      if #currentBlock["text"] >= 1 then
-        table.insert(blocks, currentBlock)
-        currentBlock = { commands = {}, text = "" }
+      if docItem:notEmpty() then
+        table.insert(blocks, docItem)
+        docItem = DocItem()
       end
     end
   end
-  if currentBlock['text'] ~= "" then
-    table.insert(blocks, currentBlock)
+  if docItem:notEmpty() then
+    table.insert(blocks, docItem)
   end
   return blocks
 end
-
 
 function DocTreeToLines(docTree)
   local textIndent = string.rep(" ", 28) -- 29 for the indent - 1 for the concat
@@ -43,13 +86,13 @@ function DocTreeToLines(docTree)
   for _, block in pairs(docTree) do
 
     -- print links
-    for _, command in pairs(block["commands"]) do
+    for _, command in pairs(block.commands) do
       local pureComandName = string.gsub(string.sub(command, 1), "%s.*$", "")
       table.insert(lines, linkIndent .. "searchalot-" .. pureComandName)
     end
 
     -- print commands with arguments
-    for _, command in pairs(block["commands"]) do
+    for _, command in pairs(block.commands) do
       table.insert(lines, command)
     end
 
@@ -71,13 +114,15 @@ function DocTreeToLines(docTree)
       line = textIndent
     end
 
-    for token in string.gmatch(block["text"],'%S+') do
-      local newline = line .. " " .. token
-      if #newline <= 78 then
-        line = newline
-      else
-        table.insert(lines, line)
-        line = textIndent .. " " .. token
+    for i = 1, #block.text do
+      for token in string.gmatch(block.text[i],'%S+') do
+        local newline = line .. " " .. token
+        if #newline <= 78 then
+          line = newline
+        else
+          table.insert(lines, line)
+          line = textIndent .. " " .. token
+        end
       end
     end
 
