@@ -1,19 +1,19 @@
 
 function DocTreeToLines(docTree)
   local textIndent = string.rep(" ", 28) -- 29 for the indent - 1 for the concat
-  local linkIndent = string.rep(" ", 49)
+  local linkIndent = string.rep(" ", 44)
 
   local lines = {}
   for _, block in pairs(docTree) do
 
     -- print links
-    for _, command in pairs(block.commands) do
+    for _, command in pairs(block.identifiers) do
       local pureComandName = string.gsub(string.sub(command, 1), "%s.*$", "")
       table.insert(lines, linkIndent .. "searchalot-" .. pureComandName)
     end
 
-    -- print commands with arguments
-    for _, command in pairs(block.commands) do
+    -- print identifiers with arguments
+    for _, command in pairs(block.identifiers) do
       table.insert(lines, command)
     end
 
@@ -27,8 +27,8 @@ function DocTreeToLines(docTree)
     -- 3. Start the new line with the command, then add indent minus the command width
     -- 4. Add the text with indent one word at a time untill the line is to long.
     local line = ""
-    local lenghtOfLastLine = #lines[#lines]
-    if lenghtOfLastLine < 28 then
+    if #lines > 0 and #lines[#lines] < 28 then
+      local lenghtOfLastLine = #lines[#lines]
       local lastLine = table.remove(lines, #lines)
       line = lastLine .. string.rep(" ", 28 - lenghtOfLastLine) -- 29 for the indent - 1 for the concat
     else

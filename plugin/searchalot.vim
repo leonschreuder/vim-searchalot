@@ -8,12 +8,33 @@ if exists("g:loaded_searchalot") && !exists('g:searchalot_force_reload')
 endif
 let g:loaded_searchalot = 1
 
+""" g:searchalot_searchtools
+"""
+""" |Dictionary| of search tools and their precedence to use. See the example
+""" below or for all default options, see the top of the plugin/searchalot.vim
+""" file. You can configure your own searchtools by setting the property in your
+""" vimrc.
+"""
+"""     let g:searchalot_searchtools = {
+"""     \  'rg': { 'grepprg': 'rg --vimgrep ', 'piped': 'rg' },
+"""     \}
+"""
 let g:searchalot_searchtools = {
 \  'rg': { 'grepprg': 'rg --vimgrep --sort path', 'piped': 'rg' },
 \  'grep': { 'grepprg': 'grep -n ', 'grepprgunix': 'grep -n $* /dev/null', 'piped': 'grep' },
 \}
 
+""" g:searchalot_force_tool
+"""
+""" If you prefer to use a certain tool over another one, but the other one is
+""" higher in the list, you can either change the |g:searchalot_searchtools|
+""" variable or set this variable to the string name of the tool to specify
+""" the one you want to use.
 
+""" g:searchalot_no_highlight
+"""
+""" When set (to any value) this variable it does not highlight the matches of
+""" the searches.
 
 " COMMANDS
 " ================================================================================
@@ -76,22 +97,37 @@ command! -nargs=+ LsearchalotCurrentFile call searchalot#InCurrentFileToLocation
 " MAPPING FUNCTIONS
 " ================================================================================
 
-" Search for a specific word under the cursor. Open in the quickfix window
+""" SearchalotCurrentWordToQuickfix()
+""" 
+""" Function you can use in a mapping to search for the word under the cursor.
+""" It works like |:Sal| and searches all files in the working dir and any
+""" subdirectory. Opens in the quickfix window. See |getting-started| for an
+""" example of such a mapping.
 fu! SearchalotCurrentWordToQuickfix()
   call searchalot#runSearch("*", { "full_word": 1 }, s:current_word_as_search())
 endfu
 
-" Search for a specific word under the cursor. Open in the location-list window
+""" SearchalotCurrentWordToLocation()
+""" 
+""" Same as |SearchalotCurrentWordToQuickfix()| but opens in the location
+""" list.
 fu! SearchalotCurrentWordToLocation()
   call searchalot#runSearch("*", { "full_word": 1, "locationlist" : 1 }, s:current_word_as_search())
 endfu
 
-" Search for selection. Open in the quickfix window
+""" SearchalotSelectionToQuickfix()
+""" 
+""" Function you can use in a mapping to search for the selection. It
+""" works like |:Sal| and searches all files in the working dir and any
+""" subdirectory. Opens in the location list. See |getting-started| for an
+""" example of such a mapping.
 fu! SearchalotSelectionToQuickfix()
   call searchalot#runSearch("*", {}, s:current_selection_as_search())
 endfu
 
-" Search for selection. Open in the location-list window
+""" SearchalotSelectionToLocation()
+""" 
+""" Same as |SearchalotSelectionToQuickfix()| but opens in the location list.
 fu! SearchalotSelectionToLocation()
   call searchalot#runSearch("*", {"locationlist" : 1}, s:current_selection_as_search())
 endfu

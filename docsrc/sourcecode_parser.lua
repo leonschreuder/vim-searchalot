@@ -1,11 +1,12 @@
 
 function DocItem()
   return {
-    commands = {},
+    identifiers = {},
     text = {""},
+    type = "",
 
-    addCommand = function(self, commandText)
-      table.insert(self.commands, commandText)
+    addIdentifier = function(self, commandText)
+      table.insert(self.identifiers, commandText)
     end,
 
     addText = function(self, text)
@@ -26,9 +27,10 @@ function DocItem()
 
     toString = function(self)
       print("{")
-      print("  commands: {")
-      for i = 1, #self.commands do
-        print("    "..self.commands[i])
+      print("type:"..self.type)
+      print("  identifiers: {")
+      for i = 1, #self.identifiers do
+        print("    "..self.identifiers[i])
       end
       print("  }")
       print("  text: {")
@@ -57,7 +59,14 @@ function ParseFile(filePath)
     if line:find("^\"\"\"") ~= nil then
       local docText = string.sub(line, 5)
       if docText:find("^:") ~= nil then
-        docItem:addCommand(docText)
+        docItem:addIdentifier(docText)
+        docItem.type = "COMMAND"
+      elseif docText:find("^g:") ~= nil then
+        docItem:addIdentifier(docText)
+        docItem.type = "VARIABLE"
+      elseif docText:find("%(%)$") ~= nil then
+        docItem:addIdentifier(docText)
+        docItem.type = "FUNCTION"
       elseif docText:find("%s%s$") then
         docItem:addText(docText:sub(1, -3))
         docItem:addTextLineBreak()
