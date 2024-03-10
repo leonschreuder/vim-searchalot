@@ -79,8 +79,8 @@ API REFERENCE                                    *searchalot-api*
 
 Commands:~
 
-                                                 *searchalot-:Sal*
-                                                 *searchalot-:Searchalot*
+                                            searchalot-:Searchalot
+                                            searchalot-:Sal
 :Searchalot {searches}
 :Sal {searches}              Run a search through all files in the current
                              working directory. This works similar to running
@@ -92,64 +92,99 @@ Commands:~
                              the pipe, and run the search again on the matches
                              of the first. This is similar to grepping, and
                              then piping the result in another grep to refine
-                             your search. For example:
-                             `:Sal "prefix" | "specific thing"` This will
-                             first search for the prefix, and then run a
-                             search for "specific thing" on all matches of the
-                             first search.
+                             your search. For example: `:Sal "prefix" |
+                             "specific thing"` This will first search for the
+                             prefix, and then run a search for "specific
+                             thing" on all matches of the first search.
+                             Results are opend in the quickfix window.
 
+                                            searchalot-:Lsearchalot
+                                            searchalot-:Lsal
+:Lsearchalot {searches}
+:Lsal {searches}             Same as |:Sal| but open the result in the
+                             location list.
 
-                                                 *searchalot-:Salf*
-                                                 *searchalot-:SearchalotInFile*
-:SearchalotInFile {file} {search}
-:Salf {file} {search}        Like |:Sal| but searches only the specified
-                             file.
+                                            searchalot-:SearchalotInFile
+                                            searchalot-:Salf
+:SearchalotInFile {file} {searches}
+:Salf {file} {searches}      Like |:Sal| but searches only the specified file.
+                             Results are opend in the quickfix window.
 
-                                                 *searchalot-:SearchalotCurrentFile*
-:SearchalotCurrentFile {search}
-:Salc {search}               Like |:Sal| but only search this file.
+                                            searchalot-:LsearchalotInFile
+                                            searchalot-:Lsalf
+:LsearchalotInFile {file} {searches}
+:Lsalf {file} {searches}     Same as |:Salf| but open the result in the
+                             location list.
+
+                                            searchalot-:SearchalotCurrentFile
+                                            searchalot-:Salc
+:SearchalotCurrentFile {searches}
+:Salc {searches}             Like |:Sal| but searches only the current file.
+                             Results are opend in the quickfix window.
+
+                                            searchalot-:LsearchalotCurrentFile
+                                            searchalot-:Lsalc
+:LsearchalotCurrentFile {file} {searches}
+:Lsalc {file} {searches}     Same as |:Salc| but open the result in the
+                             location list.
+
 
 
 Functions:~
 
-                                               *searchalot-SearchalotCurrentWord()*
-SearchalotCurrentWord()         Function you can use in a mapping to search for
-                             the word under the cursor. It works like
-                             |:Sal| and searches all files in the working
-                             dir and any subdirectory. See |getting-started|
-                             for an example of such a mapping.
+                                            searchalot-SearchalotCurrentWordToQuickfix()
+SearchalotCurrentWordToQuickfix()
+                             Function you can use in a mapping to search for
+                             the word under the cursor. It works like |:Sal|
+                             and searches all files in the working dir and any
+                             subdirectory. Opens in the quickfix window. See
+                             |getting-started| for an example of such a
+                             mapping.
 
-                                              *searchalot-SearchalotSelection()*
-SearchalotSelection()        Function you can use in a mapping to search for
-                             the selection. It works like |:Sal| and
-                             searches all files in the working dir and any
-                             subdirectory. See |getting-started| for an
-                             example of such a mapping.
+                                            searchalot-SearchalotCurrentWordToLocation()
+SearchalotCurrentWordToLocation()
+                             Same as |SearchalotCurrentWordToQuickfix()| but
+                             opens in the location list.
+
+                                            searchalot-SearchalotSelectionToQuickfix()
+SearchalotSelectionToQuickfix()
+                             Function you can use in a mapping to search for
+                             the selection. It works like |:Sal| and searches
+                             all files in the working dir and any
+                             subdirectory. Opens in the location list. See
+                             |getting-started| for an example of such a
+                             mapping.
+
+                                            searchalot-SearchalotSelectionToLocation()
+SearchalotSelectionToLocation()
+                             Same as |SearchalotSelectionToQuickfix()| but
+                             opens in the location list.
+
 
 
 Variables:~
 
-                                           *searchalot-g:searchalot_searchtools*
+                                            searchalot-g:searchalot_searchtools
 g:searchalot_searchtools     |Dictionary| of search tools and their precedence
                              to use. See the example below or for all default
                              options, see the top of the plugin/searchalot.vim
                              file. You can configure your own searchtools by
-                             setting the property in your vimrc.
->
-    let g:searchalot_searchtools = {
-    \  'rg': { 'grepprg': 'rg --vimgrep ', 'piped': 'rg' },
-    \}
-<
-                                            *searchalot-g:searchalot_force_tool*
+                             setting the property in your vimrc. let
+                             g:searchalot_searchtools = { \ 'rg': { 'grepprg':
+                             'rg --vimgrep ', 'piped': 'rg' }, \}
+
+                                            searchalot-g:searchalot_force_tool
 g:searchalot_force_tool      If you prefer to use a certain tool over another
                              one, but the other one is higher in the list, you
                              can either change the |g:searchalot_searchtools|
                              variable or set this variable to the string name
                              of the tool to specify the one you want to use.
 
-                                          *searchalot-g:searchalot_no_highlight*
+                                            searchalot-g:searchalot_no_highlight
 g:searchalot_no_highlight    When set (to any value) this variable it does not
                              highlight the matches of the searches.
+
+
 
 DISCUSSIONS                                             *searchalot-discussions*
 
