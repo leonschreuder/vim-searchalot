@@ -31,10 +31,15 @@ let g:searchalot_searchtools = {
 """ variable or set this variable to the string name of the tool to specify
 """ the one you want to use.
 
-""" g:searchalot_no_highlight
+""" g:searchalot_not_highlight_per_default
 """
-""" When set (to any value) this variable it does not highlight the matches of
-""" the searches.
+""" Normally, the results of the commands are also highlighted, unless a bang
+""" (!) is added to a command. Depending on your usecase though, you might
+""" not want to highlight the results usually. You can set this variable to
+""" 1 to simply flip the usage of the bang, so it will ONLY highlight the
+""" results when a bang is provided. This variable has no effect on the custom
+""" functions, as highlighting is explicitly provided or prevented by the
+""" respective function.
 
 " COMMANDS
 " ================================================================================
@@ -44,94 +49,138 @@ let g:searchalot_searchtools = {
 """ 
 """ Run a search through all files in the current working directory. This
 """ works similar to running `grep {searches} *` but with the fastest searcher
-""" available on your system. Multiple string-separated searches can be added,
-""" and each will be searched and highlighted. If a pipe is added, it will
-""" first search for everything before the pipe, and run the search again on
-""" the matches of the first. This is similar to grepping, and then piping the
+""" available on your system. The results will also be highilghted unless a
+""" bang (!) is provided. Multiple string-separated searches can be added, and
+""" each will be searched and highlighted. If a pipe is added, it will first
+""" search for everything before the pipe, and run the search again on the
+""" matches of the first. This is similar to grepping, and then piping the
 """ result in another grep to refine your search. For example:  
 """ `:Sal "prefix" | "specific thing"`  
 """ This will first search for the prefix, and then run a search for "specific
 """ thing" on all matches of the first search. Results are opend in the
 """ quickfix window.
-command! -nargs=+ Sal call searchalot#InWorkingDirToQuickfix('<args>')
-command! -nargs=+ Searchalot call searchalot#InWorkingDirToQuickfix('<args>')
+command! -bang -nargs=+ Sal call searchalot#InWorkingDirToQuickfix(<bang>0, '<args>')
+command! -bang -nargs=+ Searchalot call searchalot#InWorkingDirToQuickfix(<bang>0, '<args>')
 
 """ :Lsearchalot {searches}
 """ :Lsal {searches}
 """ 
-""" Same as |:Sal| but open the result in the location list.
-command! -nargs=+ Lsal call searchalot#InWorkingDirToLinkedList('<args>')
-command! -nargs=+ Lsearchalot call searchalot#InWorkingDirToLinkedList('<args>')
+""" Same as |:Sal| but open the result in the location list. Provide a bang
+""" (!) for no highlighting.
+command! -bang -nargs=+ Lsal call searchalot#InWorkingDirToLinkedList(<bang>0, '<args>')
+command! -bang -nargs=+ Lsearchalot call searchalot#InWorkingDirToLinkedList(<bang>0, '<args>')
 
 """ :SearchalotInFile {file} {searches}
 """ :Salf {file} {searches}
 """ 
 """ Like |:Sal| but searches only the specified file. Results are opend in the
 """ quickfix window.
-command! -nargs=+ -complete=file Salf call searchalot#InFileToQuickfix('<args>')
-command! -nargs=+ -complete=file SearchalotInFile call searchalot#InFileToQuickfix('<args>')
+command! -bang -nargs=+ -complete=file Salf call searchalot#InFileToQuickfix(<bang>0, '<args>')
+command! -bang -nargs=+ -complete=file SearchalotInFile call searchalot#InFileToQuickfix(<bang>0, '<args>')
 
 """ :LsearchalotInFile {file} {searches}
 """ :Lsalf {file} {searches}
 """ 
 """ Same as |:Salf| but open the result in the location list.
-command! -nargs=+ -complete=file Lsalf call searchalot#InFileToLinkedList('<args>')
-command! -nargs=+ -complete=file LsearchalotInFile call searchalot#InFileToLinkedList('<args>')
+command! -bang -nargs=+ -complete=file Lsalf call searchalot#InFileToLinkedList(<bang>0, '<args>')
+command! -bang -nargs=+ -complete=file LsearchalotInFile call searchalot#InFileToLinkedList(<bang>0, '<args>')
 
 """ :SearchalotCurrentFile {searches}
 """ :Salc {searches}
 """ 
 """ Like |:Sal| but searches only the current file. Results are opend in the
 """ quickfix window.
-command! -nargs=+ Salc call searchalot#InCurrentFileToQuickfix('<args>')
-command! -nargs=+ SearchalotCurrentFile call searchalot#InCurrentFileToQuickfix('<args>')
+command! -bang -nargs=+ Salc call searchalot#InCurrentFileToQuickfix(<bang>0, '<args>')
+command! -bang -nargs=+ SearchalotCurrentFile call searchalot#InCurrentFileToQuickfix(<bang>0, '<args>')
 
 """ :LsearchalotCurrentFile {file} {searches}
 """ :Lsalc {file} {searches}
 """ 
 """ Same as |:Salc| but open the result in the location list.
-command! -nargs=+ Lsalc call searchalot#InCurrentFileToLocationList('<args>')
-command! -nargs=+ LsearchalotCurrentFile call searchalot#InCurrentFileToLocationList('<args>')
+command! -bang -nargs=+ Lsalc call searchalot#InCurrentFileToLocationList(<bang>0, '<args>')
+command! -bang -nargs=+ LsearchalotCurrentFile call searchalot#InCurrentFileToLocationList(<bang>0, '<args>')
 
 
 " MAPPING FUNCTIONS
 " ================================================================================
 
+" Current word
+" ------------------------------------------------------------
+
 """ SearchalotCurrentWordToQuickfix()
-""" 
-""" Function you can use in a mapping to search for the word under the cursor.
-""" It works like |:Sal| and searches all files in the working dir and any
-""" subdirectory. Opens in the quickfix window. See |getting-started| for an
-""" example of such a mapping.
+"""
+""" Function you can use in a mapping to search for the word under
+""" the cursor. It works like |:Sal| and searches all files in the
+""" working dir and any subdirectory. Opens in the quickfix window. See
+""" |getting-started| for an example of such a mapping. For no highlighting,
+""" see |SearchalotCurrentWordToQuickfixNoHighlighting()|.
 fu! SearchalotCurrentWordToQuickfix()
-  call searchalot#runSearch("*", { "full_word": 1 }, s:current_word_as_search())
+  call searchalot#runSearch("*", { "highlight" : 1, "full_word": 1 }, s:current_word_as_search())
+endfu
+
+""" SearchalotCurrentWordToQuickfixNoHighlighting()
+""" 
+""" Same as |SearchalotCurrentWordToQuickfix()| but doesn't highlight the search results.
+fu! SearchalotCurrentWordToQuickfixNoHighlighting()
+  call searchalot#runSearch("*", { "highlight" : 0, "full_word": 1 }, s:current_word_as_search())
 endfu
 
 """ SearchalotCurrentWordToLocation()
 """ 
-""" Same as |SearchalotCurrentWordToQuickfix()| but opens in the location
-""" list.
+""" Same as |SearchalotCurrentWordToQuickfix()| but
+""" opens in the location list. For no highlighting, see
+""" |SearchalotCurrentWordToLocationNoHighlighting()|.
 fu! SearchalotCurrentWordToLocation()
-  call searchalot#runSearch("*", { "full_word": 1, "locationlist" : 1 }, s:current_word_as_search())
+  call searchalot#runSearch("*", { "highlight" : 1, "full_word": 1, "locationlist" : 1 }, s:current_word_as_search())
 endfu
+
+""" SearchalotCurrentWordToLocationNoHighlighting()
+""" 
+""" Same as |SearchalotCurrentWordToQuickfixNoHighlighting()| but opens in the location
+""" list.
+fu! SearchalotCurrentWordToLocationNoHighlighting()
+  call searchalot#runSearch("*", { "highlight" : 0, "full_word": 1, "locationlist" : 1 }, s:current_word_as_search())
+endfu
+
+" Selection
+" ------------------------------------------------------------
 
 """ SearchalotSelectionToQuickfix()
 """ 
 """ Function you can use in a mapping to search for the selection. It
 """ works like |:Sal| and searches all files in the working dir and any
-""" subdirectory. Opens in the location list. See |getting-started| for an
-""" example of such a mapping.
+""" subdirectory. Opens in the location list. See |getting-started|
+""" for an example of such a mapping. For no highlighting, see
+""" |SearchalotSelectionToQuickfixNoHighlighting()|.
 fu! SearchalotSelectionToQuickfix()
-  call searchalot#runSearch("*", {}, s:current_selection_as_search())
+  call searchalot#runSearch("*", { "highlight" : 1 }, s:current_selection_as_search())
+endfu
+
+""" SearchalotSelectionToQuickfixNoHighlighting()
+""" 
+""" Same as |SearchalotSelectionToQuickfix()| but doesnt highlight the search results.
+fu! SearchalotSelectionToQuickfixNoHighlighting()
+  call searchalot#runSearch("*", { "highlight" : 0 }, s:current_selection_as_search())
 endfu
 
 """ SearchalotSelectionToLocation()
 """ 
-""" Same as |SearchalotSelectionToQuickfix()| but opens in the location list.
+""" Same as |SearchalotSelectionToQuickfix()| but opens
+""" in the location list. For no highlighting, see
+""" |SearchalotSelectionToLocationNoHighlighting()|.
 fu! SearchalotSelectionToLocation()
-  call searchalot#runSearch("*", {"locationlist" : 1}, s:current_selection_as_search())
+  call searchalot#runSearch("*", { "highlight" : 1, "locationlist" : 1 }, s:current_selection_as_search())
 endfu
 
+""" SearchalotSelectionToLocationNoHighlighting()
+""" 
+""" Same as |SearchalotSelectionToQuickfixNoHighlighting()| but opens in the location list.
+fu! SearchalotSelectionToLocationNoHighlighting()
+  call searchalot#runSearch("*", { "highlight" : 0, "locationlist" : 1 }, s:current_selection_as_search())
+endfu
+
+" Helpers
+" ------------------------------------------------------------
 
 fu! s:current_word_as_search()
   return [[EscapeForGNURegexp(expand("<cword>"))]]
@@ -145,36 +194,36 @@ endfu
 " COMMAND RUNNERS
 " ================================================================================
 
-fu! searchalot#InWorkingDirToQuickfix(inputString)
-  call searchalot#runSearch('*', {}, utl#argparse#SplitArgs(a:inputString))
+fu! searchalot#InWorkingDirToQuickfix(bang, inputString)
+  call searchalot#runSearch('*', { "highlight" : searchalot#internal_should_highlight(a:bang) }, utl#argparse#SplitArgs(a:inputString))
 endfu
 
-fu! searchalot#InWorkingDirToLinkedList(inputString)
-  call searchalot#runSearch('*', { "locationlist" : 1 }, utl#argparse#SplitArgs(a:inputString))
+fu! searchalot#InWorkingDirToLinkedList(bang, inputString)
+  call searchalot#runSearch('*', { "highlight" : searchalot#internal_should_highlight(a:bang), "locationlist" : 1 }, utl#argparse#SplitArgs(a:inputString))
 endfu
 
-fu! searchalot#InFileToQuickfix(inputString)
+fu! searchalot#InFileToQuickfix(bang, inputString)
   let parsed = utl#argparse#SplitArgs(a:inputString)
   " first item as file, then remove the file from the args
   let file = parsed[0][0]
   unlet parsed[0][0]
-  call searchalot#runSearch(file, {}, parsed)
+  call searchalot#runSearch(file, { "highlight" : searchalot#internal_should_highlight(a:bang) }, parsed)
 endfu
 
-fu! searchalot#InFileToLinkedList(inputString)
+fu! searchalot#InFileToLinkedList(bang, inputString)
   let parsed = utl#argparse#SplitArgs(a:inputString)
   " first item as file, then remove the file from the args
   let file = parsed[0][0]
   unlet parsed[0][0]
-  call searchalot#runSearch(file, { "locationlist" : 1 }, parsed)
+  call searchalot#runSearch(file, { "highlight" : searchalot#internal_should_highlight(a:bang), "locationlist" : 1 }, parsed)
 endfu
 
-fu! searchalot#InCurrentFileToQuickfix(inputString)
-  call searchalot#runSearch(expand('%:.'), {}, utl#argparse#SplitArgs(a:inputString))
+fu! searchalot#InCurrentFileToQuickfix(bang, inputString)
+  call searchalot#runSearch(expand('%:.'), { "highlight" : searchalot#internal_should_highlight(a:bang) }, utl#argparse#SplitArgs(a:inputString))
 endfu
 
-fu! searchalot#InCurrentFileToLocationList(inputString)
-  call searchalot#runSearch(expand('%:.'), { "locationlist" : 1 }, utl#argparse#SplitArgs(a:inputString))
+fu! searchalot#InCurrentFileToLocationList(bang, inputString)
+  call searchalot#runSearch(expand('%:.'), { "highlight" : searchalot#internal_should_highlight(a:bang), "locationlist" : 1 }, utl#argparse#SplitArgs(a:inputString))
 endfu
 
 
@@ -211,16 +260,25 @@ fu! searchalot#runSearch(location, config, searchesList)
 
   let &grepprg = oldgrepprg
 
-  if ! exists("g:searchalot_no_highlight")
-    :MarkClear
-    for curSearchList in a:searchesList
-      for curSearch in curSearchList
-        " use 'very magic' so we can mostly use grep-is regexes here
-        exec ":Mark /\\v" . curSearch . "/"
-      endfor
-    endfor
+  if searchalot#shouldHighlight(a:config)
+    call searchalot#performHighlighting(a:searchesList)
   endif
 endfu
+
+fu! searchalot#shouldHighlight(config)
+  return has_key(a:config, 'highlight') && a:config['highlight'] == 1
+endfu
+
+fu! searchalot#performHighlighting(searchesList)
+  :MarkClear
+  for curSearchList in a:searchesList
+    for curSearch in curSearchList
+      " use 'very magic' so we can mostly use grep-is regexes here
+      exec ":Mark /\\v" . curSearch . "/"
+    endfor
+  endfor
+endfu
+
 
 " resolve the values of the first match of the search tools configured.
 " Repecting g:searchalot_force_tool, or get the first one that is installed
@@ -332,6 +390,15 @@ endfunction
 function! EscapeForGNURegexp(str)
   return escape(a:str, '^$.*?/\[]()' . '"' . "'")
 endfunction
+
+" check if should highlight depending on bang and environment variables
+fu! searchalot#internal_should_highlight(bang)
+  if exists("g:searchalot_not_highlight_per_default") && g:searchalot_not_highlight_per_default == 1
+    return !a:bang
+  else
+    return a:bang
+  endif
+endfu
 
 fu! s:configIsLocationList(config)
   return has_key(a:config, 'locationlist') && a:config['locationlist'] == 1

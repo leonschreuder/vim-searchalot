@@ -3,18 +3,20 @@ UTSuite The basics
 let g:orig_cwd = getcwd()
 let g:tmpdir = ""
 
-let g:searchalot_no_highlight = 1
 let g:searchalot_force_reload = 1
 
 " TODO:
 " - add descriptive error messages (missing file, no search string etc)
-" - other plugins besides :Mark?
+" - replace :Mark with direct function calls
 
 " SETUP
 " ================================================================================
 
 function! s:BeforeAll()
   source plugin/searchalot.vim
+  fu! searchalot#performHighlighting(searchesList)
+    let g:perform_highlighting_mock_called = 1
+  endfu
 endfunction
 
 function! s:Setup()
@@ -23,6 +25,12 @@ function! s:Setup()
   " isolate and redirect in vim
   if exists("g:searchalot_force_tool")
     unlet g:searchalot_force_tool " in case was set
+  endif
+  if exists("g:perform_highlighting_mock_called")
+    unlet g:perform_highlighting_mock_called
+  endif
+  if exists("g:searchalot_not_highlight_per_default")
+    unlet g:searchalot_not_highlight_per_default
   endif
 
   tabe " open a new tab
@@ -45,20 +53,24 @@ function s:Test_should_perform_general_find()
   call writefile(["line1"], g:tmpdir . '/target.txt', 'a')
 
   " when
-  :Searchalot "line1"
+  :Searchalot! "line1"
 
   " then
   let qflist = getqflist()
   AssertEquals(1 , len(qflist))
   AssertEquals('1:line1' , qflist[0].text)
+  AssertEquals(1 , g:perform_highlighting_mock_called)
 
   " when
-  :Lsearchalot "line1"
+  unlet g:perform_highlighting_mock_called
+  :Lsearchalot! "line1"
 
   " then
   let llist = getloclist(win_getid())
   AssertEquals(1 , len(llist))
+  AssertEquals(1 , g:perform_highlighting_mock_called)
   AssertEquals('1:line1' , llist[0].text)
+  AssertEquals(1 , g:perform_highlighting_mock_called)
 endfunction
 
 function s:Test_should_perform_find_for_all_defined_searchtools()
@@ -144,9 +156,10 @@ function s:Test_shoud_find_in_file()
   let tmpfile = g:tmpdir . '/target.txt'
   call writefile(["line1"], tmpfile, 'a')
 
-  exec ":SearchalotInFile" . tmpfile . " line1 \"line2\""
+  exec ":SearchalotInFile!" . tmpfile . " line1 \"line2\""
 
   let qflist = getqflist()
+  AssertEquals(1 , g:perform_highlighting_mock_called)
   AssertEquals(1 , len(qflist))
   AssertEquals(1 , qflist[0].lnum)
   AssertEquals('1:line1' , qflist[0].text)
@@ -158,9 +171,10 @@ function s:Test_shoud_find_in_current_file()
   call writefile(["line1"], tmpfile, 'a')
   exec ':e ' . tmpfile
 
-  :SearchalotCurrentFile "line1"
+  :SearchalotCurrentFile! "line1"
 
   let qflist = getqflist()
+  AssertEquals(1 , g:perform_highlighting_mock_called)
   AssertEquals(1 , len(qflist))
   AssertEquals(1 , qflist[0].lnum)
   AssertEquals('1:line1' , qflist[0].text)
@@ -204,4 +218,14 @@ function s:Test_shoud_find_selected_word()
   AssertEquals(1 , len(qflist))
   AssertEquals(4 , qflist[0].lnum)
   AssertEquals('1:line4' , qflist[0].text)
+endfunction
+
+function s:Test_should_interpret_bang_correctly()
+  AssertEquals(0 , searchalot#internal_should_highlight(0))
+
+  let g:searchalot_not_highlight_per_default = 1
+  AssertEquals(1 , searchalot#internal_should_highlight(0))
+
+  let g:searchalot_not_highlight_per_default = 0
+  AssertEquals(0 , searchalot#internal_should_highlight(0))
 endfunction
