@@ -3,6 +3,8 @@
 " Maintainer:    Leon Schreuder
 " Version:       0.1
 
+" Note: The vimdoc is generated from the comments that starts with 3 quotes.
+
 if exists("g:loaded_searchalot") && !exists('g:searchalot_force_reload')
   finish
 endif
@@ -261,7 +263,7 @@ fu! searchalot#runSearch(location, config, searchesList)
   let &grepprg = oldgrepprg
 
   if searchalot#shouldHighlight(a:config)
-    call searchalot#performHighlighting(a:searchesList)
+    call searchalot#performHighlighting(a:searchesList, a:config)
   endif
 endfu
 
@@ -269,14 +271,40 @@ fu! searchalot#shouldHighlight(config)
   return has_key(a:config, 'highlight') && a:config['highlight'] == 1
 endfu
 
-fu! searchalot#performHighlighting(searchesList)
-  :MarkClear
+fu! searchalot#performHighlighting(searchesList, config)
+  windo call clearmatches()
   for curSearchList in a:searchesList
     for curSearch in curSearchList
-      " use 'very magic' so we can mostly use grep-is regexes here
-      exec ":Mark /\\v" . curSearch . "/"
+      if s:configIsLocationList(a:config)
+        windo call searchalot#highlightCurrentWindow(curSearch)
+      else
+        tabdo windo call searchalot#highlightCurrentWindow(curSearch)
+      endif
     endfor
   endfor
+endfu
+
+" each window has to be treated separately. Call with `windo` to run on all
+fu! searchalot#highlightCurrentWindow(curSearch)
+  " TODO: should I save only my matches in case someone has other custom matches?
+  " if !exists("w:searchalot_highlighted")
+  "   let w:searchalot_highlighted = []
+  " endif
+  " call add(w:searchalot_highlighted, matchadd('CurSearch', a:curSearch))
+  call matchadd('CurSearch', a:curSearch)
+  " TODO: maybe add an autocommand so if a new window is opened in this tab it
+  " also has the matches
+endfu
+
+fu! searchalot#clearHighlightingCurrentWindow()
+  # TODO: if need to clear only my matches, use `matchdelete()`
+  call clearmatches()
+endfu
+
+fu! searchalot#getActiveWindowsInTab()
+  let currentTabNr = tabpagenr()
+  let tabInfo = gettabinfo(currentTabNr)
+  return tabInfo[0]['windows']
 endfu
 
 
@@ -394,9 +422,9 @@ endfunction
 " check if should highlight depending on bang and environment variables
 fu! searchalot#internal_should_highlight(bang)
   if exists("g:searchalot_not_highlight_per_default") && g:searchalot_not_highlight_per_default == 1
-    return !a:bang
-  else
     return a:bang
+  else
+    return !a:bang
   endif
 endfu
 
