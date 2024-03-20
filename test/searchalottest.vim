@@ -6,8 +6,16 @@ let g:tmpdir = ""
 let g:searchalot_force_reload = 1
 
 " TODO:
-" - add descriptive error messages (missing file, no search string etc)
 " - replace :Mark with direct function calls
+"   + support matchadd()
+"   + add custom colors (template from :Mark?)
+"   - tryout and tweak
+" - add command to clear highlighting
+" - refactor (too many functions in the main script)
+" - optimize using autoload directory
+" - better error messages
+"   - empty search string (when quoteing)
+"   - missing file for Salf (only search string should be missing search string)
 
 " SETUP
 " ================================================================================
