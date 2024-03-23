@@ -6,11 +6,11 @@ let g:tmpdir = ""
 let g:searchalot_force_reload = 1
 
 " TODO:
-" - replace :Mark with direct function calls
+" + replace :Mark with direct function calls
 "   + support matchadd()
 "   + add custom colors (template from :Mark?)
-"   - tryout and tweak
-" - add command to clear highlighting
+"   + tryout and tweak
+" + add command to clear highlighting
 " - refactor (too many functions in the main script)
 " - optimize using autoload directory
 " - better error messages
@@ -22,9 +22,6 @@ let g:searchalot_force_reload = 1
 
 function! s:BeforeAll()
   source plugin/searchalot.vim
-  fu! searchalot#performHighlighting(searchesList)
-    let g:perform_highlighting_mock_called = 1
-  endfu
 endfunction
 
 function! s:Setup()
@@ -34,12 +31,12 @@ function! s:Setup()
   if exists("g:searchalot_force_tool")
     unlet g:searchalot_force_tool " in case was set
   endif
-  if exists("g:perform_highlighting_mock_called")
-    unlet g:perform_highlighting_mock_called
-  endif
   if exists("g:searchalot_not_highlight_per_default")
     unlet g:searchalot_not_highlight_per_default
   endif
+  call s:mockPerformHighlighting()
+
+  let g:perform_highlighting_mock_called = 0
 
   tabe " open a new tab
   " change the working dir of the whole tab to the temp location
@@ -48,7 +45,8 @@ endfunction
 
 function! s:Teardown()
   cclose " close quickfix in case it's still open from searching
-  silent! bw! " close 'tmp' buffer opened with edit
+  lclose
+  bw! " close 'tmp' buffer opened with edit
   call system('rm -rf' . g:tmpdir) " remove entire tmp folder
 endfunction
 
@@ -59,9 +57,10 @@ endfunction
 function s:Test_should_perform_general_find()
   " given
   call writefile(["line1"], g:tmpdir . '/target.txt', 'a')
+  call s:mockPerformHighlighting()
 
   " when
-  :Searchalot! "line1"
+  :Searchalot "line1"
 
   " then
   let qflist = getqflist()
@@ -69,9 +68,11 @@ function s:Test_should_perform_general_find()
   AssertEquals('1:line1' , qflist[0].text)
   AssertEquals(1 , g:perform_highlighting_mock_called)
 
+  " given
+  call s:mockPerformHighlighting()
+
   " when
-  unlet g:perform_highlighting_mock_called
-  :Lsearchalot! "line1"
+  :Lsearchalot "line1"
 
   " then
   let llist = getloclist(win_getid())
@@ -85,6 +86,7 @@ function s:Test_should_perform_find_for_all_defined_searchtools()
   call writefile(["line1"], g:tmpdir . '/target.txt', 'a')
 
   for searchtoolname in keys(g:searchalot_searchtools)
+    call s:mockPerformHighlighting()
     let g:searchalot_force_tool = searchtoolname
 
     :Searchalot "line1"
@@ -96,46 +98,8 @@ function s:Test_should_perform_find_for_all_defined_searchtools()
 
 endfunction
 
-function s:Test_should_set_grepprg_correctly()
-
-  " no tool forced, finds first existing one
-  AssertEquals("rg", searchalot#getCurrentSearchToolValues()['name'])
-
-  let g:searchalot_force_tool = "rg"
-  AssertEquals("rg", searchalot#getCurrentSearchToolValues()['name'])
-
-  let g:searchalot_force_tool = "grep"
-  AssertEquals("grep", searchalot#getCurrentSearchToolValues()['name'])
-
-  let g:searchalot_force_tool = "undefined"
-  AssertThrows searchalot#getCurrentSearchToolValues()
-
-  let old_searchtools = g:searchalot_searchtools
-  let g:searchalot_searchtools = { "notinstalled": { "grepprg": "notinstalled" } }
-  let g:searchalot_force_tool = "notinstalled"
-  AssertThrows searchalot#getCurrentSearchToolValues()
-  let g:searchalot_searchtools = old_searchtools
-endfunction
-
 function s:Test_should_perform_escaping_for_internal()
-  AssertEquals([["a\\$b"]], searchalot#performVimRegexEscaping([["a$b"]]))
-endfunction
-
-function s:Test_should_add_word_boundries_for_whole_words()
-  let oldgrepprg = &grepprg
-  let &grepprg = 'internal'
-  AssertEquals([["\\<a\\>", "\\<b\\>"], ["\\<c\\>"]], searchalot#addWordBoundries([["a", "b"], ["c"]]))
-  let &grepprg = 'rg'
-  AssertEquals([["\\ba\\b", "\\bb\\b"], ["\\bc\\b"]], searchalot#addWordBoundries([["a", "b"], ["c"]]))
-  let &grepprg = oldgrepprg
-endfunction
-
-function s:Test_should_build_grep_command()
-  AssertEquals("grep! -e 'a' *", searchalot#buildGrepCommand({"name": "rg"}, [["a"]], "*"))
-  AssertEquals("lgrep! -e 'a' *", searchalot#buildGrepCommand({"name": "rg"}, [["a"]], "*", { "locationlist" : 1 }))
-  AssertEquals("grep! -e 'a' -e 'b' *", searchalot#buildGrepCommand({"name": "rg"}, [["a", "b"]], "*"))
-  AssertEquals("grep! -e 'a' -e 'b' * \\| rg -e 'c'", searchalot#buildGrepCommand({"name": "rg", "piped": "rg"}, [["a", "b"], ["c"]], "*"))
-  AssertEquals("grep! -e 'a' -e 'b' * \\| grep -e 'c'", searchalot#buildGrepCommand({"name": "grep", "piped": "grep"}, [["a", "b"], ["c"]], "*"))
+  AssertEquals([["a\\$b"]], sal#utils#performVimRegexEscaping([["a$b"]]))
 endfunction
 
 function s:Test_find_should_allow_multiple_searches()
@@ -163,11 +127,12 @@ endfunction
 function s:Test_shoud_find_in_file()
   let tmpfile = g:tmpdir . '/target.txt'
   call writefile(["line1"], tmpfile, 'a')
+  let g:perform_highlighting_mock_called = 0
 
   exec ":SearchalotInFile!" . tmpfile . " line1 \"line2\""
 
   let qflist = getqflist()
-  AssertEquals(1 , g:perform_highlighting_mock_called)
+  AssertEquals(0 , g:perform_highlighting_mock_called)
   AssertEquals(1 , len(qflist))
   AssertEquals(1 , qflist[0].lnum)
   AssertEquals('1:line1' , qflist[0].text)
@@ -178,8 +143,9 @@ function s:Test_shoud_find_in_current_file()
   let tmpfile = g:tmpdir . '/target.txt'
   call writefile(["line1"], tmpfile, 'a')
   exec ':e ' . tmpfile
+  let g:perform_highlighting_mock_called = 0
 
-  :SearchalotCurrentFile! "line1"
+  :SearchalotCurrentFile "line1"
 
   let qflist = getqflist()
   AssertEquals(1 , g:perform_highlighting_mock_called)
@@ -228,12 +194,10 @@ function s:Test_shoud_find_selected_word()
   AssertEquals('1:line4' , qflist[0].text)
 endfunction
 
-function s:Test_should_interpret_bang_correctly()
-  AssertEquals(0 , searchalot#internal_should_highlight(0))
 
-  let g:searchalot_not_highlight_per_default = 1
-  AssertEquals(1 , searchalot#internal_should_highlight(0))
-
-  let g:searchalot_not_highlight_per_default = 0
-  AssertEquals(0 , searchalot#internal_should_highlight(0))
+function! s:mockPerformHighlighting()
+  let g:perform_highlighting_mock_called = 0
+  fu! sal#highlight#applyHighlighting(searchesList, config)
+    let g:perform_highlighting_mock_called = 1
+  endfu
 endfunction

@@ -12,7 +12,7 @@ fu! s:init(argString)
   let s:inQuote = ""
 endfu
 
-function! utl#argparse#SplitArgs(argString)
+function! sal#argparse#SplitArgs(argString)
   call s:init(a:argString)
 
 	let index = 0
