@@ -31,8 +31,7 @@ fu! sal#highlight#addInCurrentWindow(curSearch, matchGroup)
   " also has the matches
 endfu
 
-fu! sal#highlight#clearInCurrentWindow()
-  # TODO: if need to clear only my matches, use `matchdelete()`
-  call clearmatches()
+fu! sal#highlight#clearHighlighting()
+  " TODO: if need to clear only my matches, use `matchdelete()`
+  windo call clearmatches()
 endfu
-

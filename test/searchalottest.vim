@@ -11,8 +11,10 @@ let g:searchalot_force_reload = 1
 "   + add custom colors (template from :Mark?)
 "   + tryout and tweak
 " + add command to clear highlighting
-" - refactor (too many functions in the main script)
-" - optimize using autoload directory
+" + refactor (too many functions in the main script)
+" + optimize using autoload directory
+" + add :SalClear - to clear highlighting
+" - add debug logging using log()
 " - better error messages
 "   - empty search string (when quoteing)
 "   - missing file for Salf (only search string should be missing search string)

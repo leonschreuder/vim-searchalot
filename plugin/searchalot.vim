@@ -135,6 +135,18 @@ fu! searchalot#InCurrentFileToLocationList(bang, inputString)
 endfu
 
 
+""" :SalClear
+""" :SearchalotClear
+"""
+""" Clear highlighting
+command! SalClear call searchalot#ClearHighlight()
+command! SearchalotClear call searchalot#ClearHighlight()
+
+fu! searchalot#ClearHighlight()
+  call sal#highlight#clearHighlighting()
+endfu
+
+
 " MAPPING FUNCTIONS
 " ================================================================================
 

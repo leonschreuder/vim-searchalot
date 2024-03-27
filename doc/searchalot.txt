@@ -86,7 +86,7 @@ Commands:~
                              working directory. This works similar to running
                              `grep {searches} *` but with the fastest searcher
                              available on your system. The results will also
-                             be highilghted when a ! (bang) is provided.
+                             be highilghted unless a bang (!) is provided.
                              Multiple string-separated searches can be added,
                              and each will be searched and highlighted. If a
                              pipe is added, it will first search for
@@ -104,7 +104,8 @@ Commands:~
                                             searchalot-:Lsal
 :Lsearchalot {searches}
 :Lsal {searches}             Same as |:Sal| but open the result in the
-                             location list. Provide ! (bang) for highlighting.
+                             location list. Provide a bang (!) for no
+                             highlighting.
 
                                             searchalot-:SearchalotInFile
                                             searchalot-:Salf
@@ -130,6 +131,11 @@ Commands:~
 :Lsalc {file} {searches}     Same as |:Salc| but open the result in the
                              location list.
 
+                                            searchalot-:SalClear
+                                            searchalot-:SearchalotClear
+:SalClear
+:SearchalotClear             Clear highlighting
+
 
 
 Functions:~
@@ -141,24 +147,25 @@ SearchalotCurrentWordToQuickfix()
                              and searches all files in the working dir and any
                              subdirectory. Opens in the quickfix window. See
                              |getting-started| for an example of such a
-                             mapping. For highlighting, see
-                             |SearchalotCurrentWordToQuickfixWithHighlighting()|.
+                             mapping. For no highlighting, see
+                             |SearchalotCurrentWordToQuickfixNoHighlighting()|.
 
-                                            searchalot-SearchalotCurrentWordToQuickfixWithHighlighting()
-SearchalotCurrentWordToQuickfixWithHighlighting()
+                                            searchalot-SearchalotCurrentWordToQuickfixNoHighlighting()
+SearchalotCurrentWordToQuickfixNoHighlighting()
                              Same as |SearchalotCurrentWordToQuickfix()| but
-                             also highlights the search results.
+                             doesn't highlight the search results.
 
                                             searchalot-SearchalotCurrentWordToLocation()
 SearchalotCurrentWordToLocation()
                              Same as |SearchalotCurrentWordToQuickfix()| but
-                             opens in the location list. For highlighting, see
-                             |SearchalotCurrentWordToLocationWithHighlighting()|.
+                             opens in the location list. For no highlighting,
+                             see
+                             |SearchalotCurrentWordToLocationNoHighlighting()|.
 
-                                            searchalot-SearchalotCurrentWordToLocationWithHighlighting()
-SearchalotCurrentWordToLocationWithHighlighting()
+                                            searchalot-SearchalotCurrentWordToLocationNoHighlighting()
+SearchalotCurrentWordToLocationNoHighlighting()
                              Same as
-                             |SearchalotCurrentWordToQuickfixWithHighlighting()|
+                             |SearchalotCurrentWordToQuickfixNoHighlighting()|
                              but opens in the location list.
 
                                             searchalot-SearchalotSelectionToQuickfix()
@@ -168,24 +175,25 @@ SearchalotSelectionToQuickfix()
                              all files in the working dir and any
                              subdirectory. Opens in the location list. See
                              |getting-started| for an example of such a
-                             mapping. For highlighting, see
-                             |SearchalotSelectionToQuickfixWithHighlighting()|.
+                             mapping. For no highlighting, see
+                             |SearchalotSelectionToQuickfixNoHighlighting()|.
 
-                                            searchalot-SearchalotSelectionToQuickfixWithHighlighting()
-SearchalotSelectionToQuickfixWithHighlighting()
+                                            searchalot-SearchalotSelectionToQuickfixNoHighlighting()
+SearchalotSelectionToQuickfixNoHighlighting()
                              Same as |SearchalotSelectionToQuickfix()| but
-                             also highlights the search results.
+                             doesnt highlight the search results.
 
                                             searchalot-SearchalotSelectionToLocation()
 SearchalotSelectionToLocation()
                              Same as |SearchalotSelectionToQuickfix()| but
-                             opens in the location list. For highlighting, see
-                             |SearchalotSelectionToLocationWithHighlighting()|.
+                             opens in the location list. For no highlighting,
+                             see
+                             |SearchalotSelectionToLocationNoHighlighting()|.
 
-                                            searchalot-SearchalotSelectionToLocationWithHighlighting()
-SearchalotSelectionToLocationWithHighlighting()
+                                            searchalot-SearchalotSelectionToLocationNoHighlighting()
+SearchalotSelectionToLocationNoHighlighting()
                              Same as
-                             |SearchalotSelectionToQuickfixWithHighlighting()|
+                             |SearchalotSelectionToQuickfixNoHighlighting()|
                              but opens in the location list.
 
 
@@ -208,15 +216,18 @@ g:searchalot_force_tool      If you prefer to use a certain tool over another
                              variable or set this variable to the string name
                              of the tool to specify the one you want to use.
 
-                                            searchalot-g:searchalot_highlight_per_default
-g:searchalot_highlight_per_default
-                             Normally, adding a bang (!) to a command will
-                             tell the plugin to also highlight the results.
-                             Depending on your usecase though, you might
-                             mostly want to highlight the results. You can set
-                             this variable to true to simply flip the usage of
-                             the bang, so it always highlights UNLESS the bang
-                             is provided.
+                                            searchalot-g:searchalot_not_highlight_per_default
+g:searchalot_not_highlight_per_default
+                             Normally, the results of the commands are also
+                             highlighted, unless a bang (!) is added to a
+                             command. Depending on your usecase though, you
+                             might not want to highlight the results usually.
+                             You can set this variable to 1 to simply flip the
+                             usage of the bang, so it will ONLY highlight the
+                             results when a bang is provided. This variable
+                             has no effect on the custom functions, as
+                             highlighting is explicitly provided or prevented
+                             by the respective function.
 
 
 
