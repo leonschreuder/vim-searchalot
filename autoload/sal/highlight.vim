@@ -6,13 +6,14 @@ fu! sal#highlight#applyHighlighting(searchesList, config)
   let matchGroupIndex=0
   for curSearchList in a:searchesList
     for curSearch in curSearchList
+      let matchGroupName = "SearchalotMatch" . matchGroupIndex
+      call sal#log#debug("highlighting: '" . curSearch . "'", "under matchGroup: " . matchGroupName)
       if sal#search#configIsLocationList(a:config)
-        windo call sal#highlight#addInCurrentWindow(curSearch, "SearchalotMatch".matchGroupIndex)
-        let matchGroupIndex += 1
+        windo call sal#highlight#addInCurrentWindow(curSearch, matchGroupName)
       else
-        tabdo windo call sal#highlight#addInCurrentWindow(curSearch, "SearchalotMatch".matchGroupIndex)
-        let matchGroupIndex += 1
+        tabdo windo call sal#highlight#addInCurrentWindow(curSearch, matchGroupName)
       endif
+      let matchGroupIndex += 1
     endfor
   endfor
 endfu
@@ -25,7 +26,6 @@ fu! sal#highlight#addInCurrentWindow(curSearch, matchGroup)
   "   let w:searchalot_highlighted = []
   " endif
   " call add(w:searchalot_highlighted, matchadd('CurSearch', a:curSearch))
-  echom "matchGroup:".a:matchGroup
   call matchadd(a:matchGroup, a:curSearch)
   " TODO: maybe add an autocommand so if a new window is opened in this tab it
   " also has the matches

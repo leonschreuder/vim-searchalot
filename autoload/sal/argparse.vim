@@ -59,6 +59,7 @@ function! sal#argparse#SplitArgs(argString)
   endwhile
 
   call s:endGroup()
+  call sal#log#debug("parsed args:", s:parsedArgsGroupList)
   return s:parsedArgsGroupList
 endfunction
 

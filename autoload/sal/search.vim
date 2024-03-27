@@ -5,8 +5,10 @@ fu! sal#search#runSearch(location, config, searchesList)
   " the user was using it outside of the plugin. The current values are
   " therfore saved and restored wenn we're done.
   let oldgrepprg = &grepprg
+  call sal#log#debug("config:", string(a:config))
 
   let searchTool = sal#search#getCurrentSearchToolValues()
+  call sal#log#debug("searchtool:", string(searchTool))
 
   let &grepprg = searchTool['grepprg']
 
@@ -19,6 +21,7 @@ fu! sal#search#runSearch(location, config, searchesList)
   endif
 
   let grepCmd = sal#search#buildGrepCommand(searchTool, searches, a:location, a:config)
+  call sal#log#debug("grepCmd:", grepCmd)
 
   execute 'silent ' . grepCmd
   if sal#search#configIsLocationList(a:config)
