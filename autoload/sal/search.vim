@@ -30,11 +30,11 @@ fu! sal#search#runSearch(location, config, searchesList)
     copen " open the results in the quickfix window
   endif
 
-  let &grepprg = oldgrepprg
-
   if has_key(a:config, 'highlight') && a:config['highlight'] == 1
     call sal#highlight#applyHighlighting(a:searchesList, a:config)
   endif
+
+  let &grepprg = oldgrepprg
 endfu
 
 " resolve the values of the first match of the search tools configured.

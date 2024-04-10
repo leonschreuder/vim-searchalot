@@ -11,7 +11,11 @@ fu! sal#highlight#applyHighlighting(searchesList, config)
       if sal#search#configIsLocationList(a:config)
         windo call sal#highlight#addInCurrentWindow(curSearch, matchGroupName)
       else
+        " after tabdo we will be on the last tabpage instead of the current
+        " one. So save the current one before running and switch back after.
+        let currentTabNr = tabpagenr()
         tabdo windo call sal#highlight#addInCurrentWindow(curSearch, matchGroupName)
+        execute 'tabnext' currentTabNr
       endif
       let matchGroupIndex += 1
     endfor
