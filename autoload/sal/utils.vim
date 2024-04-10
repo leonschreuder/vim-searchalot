@@ -8,6 +8,11 @@ function! sal#utils#escapeForGNURegexp(str)
   return escape(a:str, '^$.*?/\[]()' . '"' . "'")
 endfunction
 
+" Grepprg allows special characters like # and % which expand to
+" filenames etc.
+function! sal#utils#escapeForGrepprg(str)
+  return escape(a:str, '#%' . '"' . "'")
+endfunction
 
 " Escape each string in the nested list for vims regex syntax
 fu! sal#utils#performVimRegexEscaping(searchesList)

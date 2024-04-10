@@ -33,6 +33,11 @@ function s:Test_should_build_grep_command()
   AssertEquals("grep! -e 'a' -e 'b' * \\| grep -e 'c'", sal#search#buildGrepCommand({"name": "grep", "piped": "grep"}, [["a", "b"], ["c"]], "*"))
 endfunction
 
+function s:Test_should_escape_special_characters()
+  AssertEquals("grep! -e 'a\\#b' *", sal#search#buildGrepCommand({"name": "rg"}, [["a#b"]], "*"))
+  AssertEquals("grep! -e 'a\\%b' *", sal#search#buildGrepCommand({"name": "rg"}, [["a%b"]], "*"))
+endfunction
+
 function s:Test_should_interpret_bang_correctly()
   " when bang is not provided (default), we want highlighting (return 1)
   AssertEquals(1 , sal#search#shouldHighlight(0))

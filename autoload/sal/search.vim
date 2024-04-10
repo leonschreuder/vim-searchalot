@@ -81,7 +81,7 @@ fu! sal#search#buildGrepCommand(searchTool, searchesList, location, config = {})
       throw "Nested searches are not supported for internal vimgrep"
     endif
     for curSearch in a:searchesList[0]
-      call add(grepCmd, "/" . curSearch . "/j")
+      call add(grepCmd, "/" . sal#utils#escapeForGrepprg(curSearch) . "/j")
     endfor
   else
     let index = 0
@@ -94,7 +94,7 @@ fu! sal#search#buildGrepCommand(searchTool, searchesList, location, config = {})
       endif
 
       for curSearch in curSearchList
-        call add(grepCmd, "-e '" . curSearch . "'")
+        call add(grepCmd, "-e '" . sal#utils#escapeForGrepprg(curSearch) . "'")
       endfor
 
       let index = index + 1
