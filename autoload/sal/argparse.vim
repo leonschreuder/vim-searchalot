@@ -12,48 +12,75 @@ fu! s:init(argString)
   let s:inQuote = ""
 endfu
 
-function! sal#argparse#SplitArgs(argString)
+fu! sal#argparse#SplitArgs(argString)
   call s:init(a:argString)
 
-	let index = 0
+  let index = 0
   while index < len(s:inputArgChars)
     let currentChar = s:inputArgChars[index]
 
-    " ESCAPED
-    if currentChar == "\\"
-      " The next characters is escaped, so skip to the next character, and
-      " take it as is. To support stuff like \n it should be added here
-      let index = index + 1
-      call s:addCharToWord(s:inputArgChars[index])
-
-    " SPACE
-    elseif currentChar == " "
-      if s:hasQuoteOpen()  " space but we're in a quote; ignore the space and continue
+    " Inside quotes is treated as a literal string. So escape all regex related characters
+    if s:hasQuoteOpen()
+      if currentChar == '\'
         call s:addCharToWord(currentChar)
-      else
-        call s:endWord() " space but not quoted; end the word
-      endif
-
-    " QUOTE
-    elseif s:isQuote(currentChar)
-      if s:hasQuoteOpen()
-        if s:isClosingQuote(currentChar) " this is the closing char
-          call s:closeQuote()
-        else " not the one we have opened, treat as simple character to parse
-          call s:addCharToWord(currentChar)
+        " Check if the next char is the same as the currently opened quote.
+        " Which would be an escaped closing quote and should be treaded like a
+        " normal char.
+        let nextChar = s:inputArgChars[index+1]
+        if s:isTypeOfQuote(nextChar) && s:isClosingOfOpenedQuote(nextChar)
+          " It IS an escaped closer. Add it directly and skip to the char
+          " after that.
+          let index = index + 1
+          call s:addCharToWord(s:inputArgChars[index])
+        else
+          " literal backslash. Escape like one of the regex characters below
+          call s:addCharToWord('\')
         endif
+
+      " any regex chars are escaped, similar to sal#utils#escapeForGNURegexp
+      elseif match(currentChar, '[.$*^?\[\]()]') != -1
+          call s:addCharToWord('\')
+          call s:addCharToWord(currentChar)
+
+      " QUOTE
+      elseif s:isTypeOfQuote(currentChar)
+          if s:isClosingOfOpenedQuote(currentChar) " this is the closing char
+            call s:closeQuote()
+          else " not the one we have opened, treat as simple character to parse
+            call s:addCharToWord(currentChar)
+          endif
       else
-        " not in a quote yet, so this is an opening quote
-        call s:openQuote(currentChar)
+
+        " REGULAR CHAR
+        " notice space is treated like a regular char here
+        call s:addCharToWord(currentChar)
       endif
-
-    elseif currentChar == "|"
-      call s:endGroup()
     else
+      if currentChar == '\'
+        " We aren't in quotes, and the next characters is escaped, so skip to
+        " the next character (which is escaped), and take it as is.
+        let index = index + 1
+        call s:addCharToWord(s:inputArgChars[index])
 
-      " REGULAR CHAR
-      call s:addCharToWord(currentChar)
+        " SPACE
+      elseif currentChar == " "
+        call s:endWord() " space but not quoted; end the word
+
+        " QUOTE
+      elseif s:isTypeOfQuote(currentChar)
+        " not in a quote yet, so this must be an opening quote
+        call s:openQuote(currentChar)
+
+      elseif currentChar == "|"
+        call s:endGroup()
+      else
+
+        " REGULAR CHAR
+        call s:addCharToWord(currentChar)
+      endif
     endif
+
+    " ESCAPED
 
     let index = index + 1
   endwhile
@@ -63,7 +90,7 @@ function! sal#argparse#SplitArgs(argString)
   return s:parsedArgsGroupList
 endfunction
 
-fu! s:isQuote(char)
+fu! s:isTypeOfQuote(char)
   return a:char == '"' || a:char == "'"
 endfu
 
@@ -82,7 +109,7 @@ fu! s:hasQuoteOpen()
   return s:inQuote != ""
 endfu
 
-fu! s:isClosingQuote(char)
+fu! s:isClosingOfOpenedQuote(char)
   return s:inQuote == a:char
 endfu
 
