@@ -22,7 +22,7 @@ let g:loaded_searchalot = 1
 """     \}
 """     " note: don't use --vimgrep here or rg will return a line for every match, even those on the same line
 let g:searchalot_searchtools = {
-\  'rg': { 'grepprg': 'rg --with-filename --line-number --context 0 --color never --sort path', 'piped': 'rg' },
+\  'rg': { 'grepprg': 'rg --column --no-heading --with-filename --line-number --context 0 --color never --sort path ', 'piped': 'rg' },
 \  'grep': { 'grepprg': 'grep -n ', 'grepprgunix': 'grep -n $* /dev/null', 'piped': 'grep' },
 \}
 
