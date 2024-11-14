@@ -8,7 +8,7 @@ highlight def SearchalotMatch3  ctermbg=Yellow ctermfg=Black guibg=#FFE8A1 guifg
 highlight def SearchalotMatch4  ctermbg=DarkCyan ctermfg=Black guibg=#D2A1FF guifg=#420080
 highlight def SearchalotMatch5  ctermbg=Cyan ctermfg=Black guibg=#A1FEFF guifg=#007F80
 highlight def SearchalotMatch6  ctermbg=DarkBlue ctermfg=Black guibg=#A1DBFF guifg=#004E80
-" highlight def SearchalotMatch7  ctermbg=DarkMagenta','ctermfg=Black guibg=#A29CCF guifg=#120080
+highlight def SearchalotMatch7  ctermbg=DarkMagenta ctermfg=Black guibg=#A29CCF guifg=#120080
 highlight def SearchalotMatch8  ctermbg=DarkRed ctermfg=Black guibg=#F5A1FF guifg=#720080
 highlight def SearchalotMatch9  ctermbg=Brown ctermfg=Black guibg=#FFC4A1 guifg=#803000
 highlight def SearchalotMatch10  ctermbg=DarkGreen ctermfg=Black guibg=#D0FFA1 guifg=#3F8000
