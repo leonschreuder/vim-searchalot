@@ -7,21 +7,25 @@ fu! sal#argparse#Input(argString)
         \   "inputArgChars": [],
         \}
 
-  fu! Input.hasNextChar() dict
-    return (self.currentCharIndex + 1) < len(self.inputArgChars)
-  endfu
-
-  fu! Input.popNextChar() dict
+  fu! Input.popChar() dict
     let self.currentCharIndex = self.currentCharIndex + 1
     return self.inputArgChars[self.currentCharIndex]
+  endfu
+
+  fu! Input.hasNextChar() dict
+    return (self.currentCharIndex + 1) < len(self.inputArgChars)
   endfu
 
   fu! Input.peekNextChar() dict
     return self.inputArgChars[self.currentCharIndex + 1]
   endfu
 
-  fu! Input.moveToNextChar() dict
-    let self.currentCharIndex = self.currentCharIndex + 1
+  fu! Input.peekPreviousChar() dict
+    return self.inputArgChars[self.currentCharIndex - 1]
+  endfu
+
+  fu! Input.peekCharDelata(delta) dict
+    return self.inputArgChars[self.currentCharIndex + delta]
   endfu
 
   let Input.inputArgChars = split(a:argString, '\zs')
@@ -88,7 +92,7 @@ fu! sal#argparse#SplitArgs(argString)
   call sal#log#debug("input:", a:argString)
 
   while input.hasNextChar()
-    let currentChar = input.popNextChar()
+    let currentChar = input.popChar()
 
     " Inside quotes is treated as a literal string. So escape all regex related characters
     if parseResult.isInQuote()
@@ -101,7 +105,7 @@ fu! sal#argparse#SplitArgs(argString)
         if s:isTypeOfQuote(nextChar) && parseResult.inQuote == nextChar
           " It IS an escaped closer. Add it directly and skip to the char
           " after that.
-          call parseResult.addCharToWord(input.popNextChar())
+          call parseResult.addCharToWord(input.popChar())
         else
           " literal backslash. Escape like one of the regex characters below
           call parseResult.addCharToWord('\')
@@ -126,30 +130,48 @@ fu! sal#argparse#SplitArgs(argString)
         call parseResult.addCharToWord(currentChar)
       endif
     else
-      if currentChar == '\'
-        " We aren't in quotes, and the next characters is escaped, so skip to
-        " the next character (which is escaped), and take it as is.
-        call parseResult.addCharToWord(input.popNextChar())
+      " NOT IN QUOTES
 
-        " SPACE
+      if currentChar == '\' && input.peekNextChar() == '\'
+        " You've encountered a wild '\\'
+        " This is basically just passed it to the grep command, but we have to
+        " handle it explicitly because of the escaping of spaces (below).
+        " Simply add both slashes to the word so they don't get interprated
+        " separately in case they are followed by a search-seaparating-space.
+        call parseResult.addCharToWord(currentChar)
+        call parseResult.addCharToWord(input.popChar())
+
+      elseif currentChar == '\' && input.peekNextChar() == ' '
+        " You've encountered a wild '\ '
+        " An escaped space is used to destinguish between separate, space
+        " separated search querries. This is just like in a grep-like command
+        " from the shell, but as we pass the searches to the grep command
+        " pre-grouped, we don't need to pass the escape characters. But we do
+        " need it here to provide the same standarad separation convention.
+        " Just skip the slash, and add the pace to the word, as opposed to
+        " ending the word like we normally would.
+        call parseResult.addCharToWord(input.popChar())
+
+
       elseif currentChar == " "
+        " You've encountered a wild ' '
+        " Space ends the search group/word
         call parseResult.endWord()
 
-        " QUOTE
       elseif s:isTypeOfQuote(currentChar)
-        " not in a quote yet, so this must be an opening quote
+        " You've encountered a wild '"'
+        " we weren't in a quote yet, so this must be an opening quote
         call parseResult.openQuote(currentChar)
 
       elseif currentChar == "|" && parseResult.isNotInGroup() && input.peekNextChar() == " "
+        " You've encountered a wild ' | '
+        " A pipe surronded by spaces ends a group for stringing multiple commands together
         call parseResult.endGroup()
       else
-
         " REGULAR CHAR
         call parseResult.addCharToWord(currentChar)
       endif
     endif
-
-    " ESCAPED
 
   endwhile
 

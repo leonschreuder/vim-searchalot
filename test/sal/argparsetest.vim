@@ -14,13 +14,14 @@ function s:Test_should_split_args_respecting_quotes()
   AssertEquals([["a", "b \\'2\\'", "c"]], sal#argparse#SplitArgs("a 'b \\'2\\'' c"))
   " escaped space will make this part of the string
   AssertEquals([["a b", "c"]], sal#argparse#SplitArgs("a\\ b c"))
-  AssertEquals([["a", "[b]", "c"]], sal#argparse#SplitArgs("a \\[b\\] c"))
-  AssertEquals([["a", "\\", "c"]], sal#argparse#SplitArgs("a \\\\ c"))
+  AssertEquals([["a", "\\[b\\]", "c"]], sal#argparse#SplitArgs("a \\[b\\] c"))
+  AssertEquals([["a", "\\\\", "c"]], sal#argparse#SplitArgs("a \\\\ c"))
+  AssertEquals([["a", "\\\\ c"]], sal#argparse#SplitArgs("a \\\\\\ c")) " 3 slashes are only one escaped space
 endfunction
 
 function s:Test_should_allow_regexes()
   AssertEquals([["[a-c]"]], sal#argparse#SplitArgs("[a-c]"))
-  AssertEquals([["\s\d"]], sal#argparse#SplitArgs("\s\d"))
+  AssertEquals([["\\s\\d"]], sal#argparse#SplitArgs("\\s\\d"))
 endfunction
 
 function s:Test_should_escape_regexes_in_quoted_strings()
@@ -41,11 +42,11 @@ function s:Test_should_allow_looping_through_Input()
   let input = sal#argparse#Input("a b")
 
   AssertEquals(v:true, input.hasNextChar())
-  AssertEquals("a", input.popNextChar())
+  AssertEquals("a", input.popChar())
   AssertEquals(v:true, input.hasNextChar())
-  AssertEquals(" ", input.popNextChar())
+  AssertEquals(" ", input.popChar())
   AssertEquals(v:true, input.hasNextChar())
-  AssertEquals("b", input.popNextChar())
+  AssertEquals("b", input.popChar())
   AssertEquals(v:false, input.hasNextChar())
 endfunction
 
