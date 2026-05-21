@@ -120,7 +120,7 @@ command! -bang -nargs=+ Salc call searchalot#InCurrentFileToQuickfix(<bang>0, '<
 command! -bang -nargs=+ SearchalotCurrentFile call searchalot#InCurrentFileToQuickfix(<bang>0, '<args>')
 
 fu! searchalot#InCurrentFileToQuickfix(bang, inputString)
-  call sal#search#runSearch(expand('%:.'), { "highlight" : sal#search#shouldHighlight(a:bang) }, sal#argparse#SplitArgs(a:inputString))
+  call sal#search#runSearch(sal#utils#get_current_file(), { "highlight" : sal#search#shouldHighlight(a:bang) }, sal#argparse#SplitArgs(a:inputString))
 endfu
 
 """ :LsearchalotCurrentFile {file} {searches}
@@ -131,9 +131,8 @@ command! -bang -nargs=+ Lsalc call searchalot#InCurrentFileToLocationList(<bang>
 command! -bang -nargs=+ LsearchalotCurrentFile call searchalot#InCurrentFileToLocationList(<bang>0, '<args>')
 
 fu! searchalot#InCurrentFileToLocationList(bang, inputString)
-  call sal#search#runSearch(expand('%:.'), { "highlight" : sal#search#shouldHighlight(a:bang), "locationlist" : 1 }, sal#argparse#SplitArgs(a:inputString))
+  call sal#search#runSearch(sal#utils#get_current_file(), { "highlight" : sal#search#shouldHighlight(a:bang), "locationlist" : 1 }, sal#argparse#SplitArgs(a:inputString))
 endfu
-
 
 """ :SalClear
 """ :SearchalotClear

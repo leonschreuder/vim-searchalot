@@ -64,3 +64,16 @@ function! sal#utils#getVisualSelection()
   let lines[0] = lines[0][column_start - 1:]
   return join(lines, "\n")
 endfunction
+
+function! sal#utils#get_current_file()
+  if ! getwininfo(win_getid())[0]['quickfix']
+    let g:searchalot_last_file = expand('%:.')
+    return g:searchalot_last_file
+  else
+    if exists("g:searchalot_last_file") && g:searchalot_last_file != ""
+      return g:searchalot_last_file
+    else
+      throw "Currently in the quickfix window. Please run the command in a regular buffer first."
+    endif
+  endif
+endfu
